@@ -126,15 +126,28 @@ def chat():
     data = request.get_json()
     message = data.get('message')
     
+    if not message:
+        return jsonify({"error": "No message provided"}), 400
+    
     try:
         client = Client()
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": message}]
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."},
+                {"role": "user", "content": message}
+            ],
+            temperature=0.7,
+            max_tokens=1000
         )
+        
+        if not response.choices:
+            return jsonify({"error": "No response generated"}), 500
+            
         return jsonify({"response": response.choices[0].message.content})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Chat error: {str(e)}")  # For debugging
+        return jsonify({"error": "Failed to generate response. Please try again."}), 500
 
 @app.route('/api/prompts', methods=['GET', 'POST'])
 @login_required
@@ -201,7 +214,7 @@ def generate_image():
         return jsonify({"image_url": response.data[0].url})
         
     except Exception as e:
-        print(f"Error generating image: {str(e)}")  # Для отладки
+        print(f"Error generating image: {str(e)}")  # For debugging
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
