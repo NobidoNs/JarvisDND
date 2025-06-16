@@ -125,11 +125,16 @@ def logout():
 def chat():
     data = request.get_json()
     message = data.get('message')
+    selected_prompts = data.get('selected_prompts', [])
+    
+    print(f"Received message: {message}")  # Debug log
+    print(f"Selected prompts: {selected_prompts}")  # Debug log
     
     if not message:
         return jsonify({"error": "No message provided"}), 400
     
     try:
+        # Generate text response
         client = Client()
         response = client.chat.completions.create(
             model="gpt-4",
@@ -143,8 +148,28 @@ def chat():
         
         if not response.choices:
             return jsonify({"error": "No response generated"}), 500
-            
-        return jsonify({"response": response.choices[0].message.content})
+
+        # Create image prompt using the content directly from selected prompts
+        image_prompt = message
+        if selected_prompts:
+            # Extract content from selected prompts
+            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+            if prompt_contents:
+                combined_prompt = f"Dungeons and Dragons scene: {message}. Style and details: {' '.join(prompt_contents)}"
+                image_prompt = combined_prompt
+                print(f"Using combined prompt: {image_prompt}")  # Debug log
+
+        # Generate image based on the enhanced prompt
+        image_response = client.images.generate(
+            model="flux",
+            prompt=image_prompt,
+            response_format="url"
+        )
+        
+        return jsonify({
+            "response": response.choices[0].message.content,
+            "image_url": image_response.data[0].url
+        })
     except Exception as e:
         print(f"Chat error: {str(e)}")  # For debugging
         return jsonify({"error": "Failed to generate response. Please try again."}), 500
