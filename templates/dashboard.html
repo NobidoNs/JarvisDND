@@ -103,7 +103,7 @@ $(document).ready(function() {
     // Chat functionality
     $('#chatForm').on('submit', function(e) {
         e.preventDefault();
-        const message = $('#messageInput').val();
+        const message = $('#messageInput').val().trim();
         if (!message) return;
 
         // Add user message
@@ -122,11 +122,16 @@ $(document).ready(function() {
             success: function(response) {
                 // Remove loading indicator and add response
                 $(`#message-${loadingId}`).remove();
-                appendMessage('assistant', response.response);
+                if (response.error) {
+                    appendMessage('assistant', `<div class="alert alert-danger">${response.error}</div>`);
+                } else {
+                    appendMessage('assistant', response.response);
+                }
             },
-            error: function() {
+            error: function(xhr) {
                 $(`#message-${loadingId}`).remove();
-                appendMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+                const errorMessage = xhr.responseJSON?.error || 'Failed to get response. Please try again.';
+                appendMessage('assistant', `<div class="alert alert-danger">${errorMessage}</div>`);
             }
         });
     });
@@ -231,6 +236,54 @@ $(document).ready(function() {
 
     // Load prompts on page load
     loadPrompts();
+
+    // Handle edit prompt
+    $(document).on('click', '.edit-prompt', function() {
+        const promptCard = $(this).closest('.prompt-card');
+        const promptId = promptCard.data('id');
+        const title = promptCard.find('h3').text();
+        const content = promptCard.find('p').text();
+
+        // Fill the form with prompt data
+        $('#promptTitle').val(title);
+        $('#promptContent').val(content);
+
+        // Change form submit handler temporarily
+        const originalSubmitHandler = $('#promptForm').off('submit').on('submit', function(e) {
+            e.preventDefault();
+            const newTitle = $('#promptTitle').val();
+            const newContent = $('#promptContent').val();
+
+            $.ajax({
+                url: `/api/prompts/${promptId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ title: newTitle, content: newContent }),
+                success: function() {
+                    // Reset form and restore original submit handler
+                    $('#promptTitle').val('');
+                    $('#promptContent').val('');
+                    $('#promptForm').off('submit').on('submit', originalSubmitHandler);
+                    loadPrompts();
+                }
+            });
+        });
+    });
+
+    // Handle delete prompt
+    $(document).on('click', '.delete-prompt', function() {
+        if (confirm('Are you sure you want to delete this prompt?')) {
+            const promptId = $(this).closest('.prompt-card').data('id');
+            
+            $.ajax({
+                url: `/api/prompts/${promptId}`,
+                method: 'DELETE',
+                success: function() {
+                    loadPrompts();
+                }
+            });
+        }
+    });
 });
 </script>
 {% endblock %} 
