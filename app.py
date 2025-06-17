@@ -17,7 +17,9 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24))
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///dnd_assistant.db')
+# Use a writable temporary directory for the database
+db_path = os.path.join(os.getenv('TEMP_DIR', '/tmp'), 'dnd_assistant.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -27,6 +29,9 @@ login_manager.login_view = 'login'
 
 # Initialize database
 with app.app_context():
+    print(f"Database path: {db_path}")
+    print(f"Database directory exists: {os.path.exists(os.path.dirname(db_path))}")
+    print(f"Database directory is writable: {os.access(os.path.dirname(db_path), os.W_OK)}")
     db.create_all()
     print("Database tables created successfully")
 
