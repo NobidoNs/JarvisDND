@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Allow OAuth2 over HTTP for local development
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dnd_assistant.db'
@@ -26,6 +29,7 @@ login_manager.login_view = 'login'
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+REDIRECT_URI = "http://localhost:5000/login/callback"  # Hardcoded redirect URI for local development
 
 if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
     raise ValueError("Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file")
@@ -63,9 +67,11 @@ def login():
     
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
-        redirect_uri=request.base_url + "/callback",
+        redirect_uri=REDIRECT_URI,
         scope=["openid", "email", "profile"],
     )
+    print(f"Using redirect URI: {REDIRECT_URI}")  # Debug log
+    print(f"Full request URI: {request_uri}")  # Debug log
     return redirect(request_uri)
 
 @app.route('/login/callback')
@@ -77,7 +83,7 @@ def callback():
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
         authorization_response=request.url,
-        redirect_url=request.base_url,
+        redirect_url=REDIRECT_URI,
         code=code
     )
     token_response = requests.post(
@@ -127,19 +133,27 @@ def chat():
     message = data.get('message')
     selected_prompts = data.get('selected_prompts', [])
     
-    print(f"Received message: {message}")  # Debug log
-    print(f"Selected prompts: {selected_prompts}")  # Debug log
+    # print(f"Received message: {message}")  # Debug log
+    # print(f"Selected prompts: {selected_prompts}")  # Debug log
     
     if not message:
         return jsonify({"error": "No message provided"}), 400
     
     try:
+        # Prepare system message with selected prompts
+        system_message = "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."
+        if selected_prompts:
+            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+            if prompt_contents:
+                system_message += f"\nAdditional context and style: {' '.join(prompt_contents)}"
+
         # Generate text response
+        print(system_message)
         client = Client()
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."},
+                {"role": "system", "content": system_message},
                 {"role": "user", "content": message}
             ],
             temperature=0.7,
@@ -155,9 +169,9 @@ def chat():
             # Extract content from selected prompts
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
-                combined_prompt = f"Dungeons and Dragons scene: {message}. Style and details: {' '.join(prompt_contents)}"
+                combined_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
                 image_prompt = combined_prompt
-                print(f"Using combined prompt: {image_prompt}")  # Debug log
+                # print(f"Using combined prompt: {image_prompt}")  # Debug log
 
         # Generate image based on the enhanced prompt
         image_response = client.images.generate(
