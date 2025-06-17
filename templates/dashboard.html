@@ -43,7 +43,7 @@
                             </button>
                         </div>
                         <div class="prompt-selector mb-3">
-                            <label class="form-label">Select prompts to use for image generation:</label>
+                            <label class="form-label">Select prompts to use for generation:</label>
                             <div id="promptCheckboxes" class="d-flex flex-wrap gap-2">
                                 <!-- Prompts will be loaded here -->
                             </div>
@@ -186,7 +186,9 @@ $(document).ready(function() {
         $('.prompt-selector input[type="checkbox"]:checked').each(function() {
             const promptId = $(this).val();
             const promptTitle = $(this).next('label').text().trim();
-            const promptContent = $(`#prompt-${promptId}`).closest('.prompt-card').find('p').text().trim();
+            // Find the prompt content from the prompts list
+            const promptContent = $(`#promptsList .prompt-card[data-id="${promptId}"] p`).text().trim();
+            console.log('Found prompt:', { id: promptId, title: promptTitle, content: promptContent }); // Debug log
             selectedPrompts.push({
                 id: promptId,
                 title: promptTitle,
