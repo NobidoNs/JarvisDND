@@ -29,7 +29,7 @@ login_manager.login_view = 'login'
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
-REDIRECT_URI = "http://localhost:5000/login/callback"  # Hardcoded redirect URI for local development
+REDIRECT_URI = os.getenv('REDIRECT_URI', 'http://localhost:5000/login/callback')  # Dynamic redirect URI based on environment
 
 if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
     raise ValueError("Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file")
