@@ -23,32 +23,48 @@
     <div class="tab-content" id="dashboardTabsContent">
         <!-- Chat Tab -->
         <div class="tab-pane fade show active" id="chat" role="tabpanel">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-chat-dots me-2"></i>AI DM Assistant
-                    </h5>
-                    <div class="chat-container" id="chatContainer">
-                        <div class="welcome-message">
-                            <i class="bi bi-stars"></i>
-                            <h3>Welcome to your AI DM Assistant!</h3>
-                            <p>Ask me anything about D&D, from rules to story ideas.</p>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-chat-dots me-2"></i>AI DM Assistant
+                            </h5>
+                            <div class="chat-container" id="chatContainer">
+                                <div class="welcome-message">
+                                    <i class="bi bi-stars"></i>
+                                    <h3>Welcome to your AI DM Assistant!</h3>
+                                    <p>Ask me anything about D&D, from rules to story ideas.</p>
+                                </div>
+                            </div>
+                            <form id="chatForm" class="mt-3">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" id="messageInput" placeholder="Ask your question...">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                </div>
+                                <div class="prompt-selector mb-3">
+                                    <label class="form-label">Select prompts to use for generation:</label>
+                                    <div id="promptCheckboxes" class="d-flex flex-wrap gap-2">
+                                        <!-- Prompts will be loaded here -->
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                    <form id="chatForm" class="mt-3">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" id="messageInput" placeholder="Ask your question...">
-                            <button class="btn btn-primary" type="submit">
-                                <i class="bi bi-send"></i>
-                            </button>
-                        </div>
-                        <div class="prompt-selector mb-3">
-                            <label class="form-label">Select prompts to use for generation:</label>
-                            <div id="promptCheckboxes" class="d-flex flex-wrap gap-2">
-                                <!-- Prompts will be loaded here -->
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-images me-2"></i>Generated Images
+                            </h5>
+                            <div class="image-gallery" id="imageGallery">
+                                <!-- Generated images will be displayed here -->
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -175,7 +191,7 @@ $(document).ready(function() {
         });
     });
 
-    // Chat functionality
+    // Modified chat form submission to handle images
     $('#chatForm').on('submit', function(e) {
         e.preventDefault();
         const message = $('#messageInput').val().trim();
@@ -186,17 +202,13 @@ $(document).ready(function() {
         $('.prompt-selector input[type="checkbox"]:checked').each(function() {
             const promptId = $(this).val();
             const promptTitle = $(this).next('label').text().trim();
-            // Find the prompt content from the prompts list
             const promptContent = $(`#promptsList .prompt-card[data-id="${promptId}"] p`).text().trim();
-            console.log('Found prompt:', { id: promptId, title: promptTitle, content: promptContent }); // Debug log
             selectedPrompts.push({
                 id: promptId,
                 title: promptTitle,
                 content: promptContent
             });
         });
-
-        console.log('Selected prompts with content:', selectedPrompts); // Debug log
 
         // Add user message
         appendMessage('user', message);
@@ -215,24 +227,23 @@ $(document).ready(function() {
                 selected_prompts: selectedPrompts
             }),
             success: function(response) {
-                console.log('Server response:', response); // Debug log
                 // Remove loading indicator and add response
                 $(`#message-${loadingId}`).remove();
                 if (response.error) {
                     appendMessage('assistant', `<div class="alert alert-danger">${response.error}</div>`);
                 } else {
-                    // Create a container for both text and image
+                    // Create a container for text response
                     const messageContent = `
                         <div class="response-container">
                             <div class="text-response">${response.response}</div>
-                            ${response.image_url ? `
-                                <div class="image-response mt-3">
-                                    <img src="${response.image_url}" class="img-fluid rounded" alt="Generated scene">
-                                </div>
-                            ` : ''}
                         </div>
                     `;
                     appendMessage('assistant', messageContent);
+
+                    // If there's an image, add it to the gallery
+                    if (response.image_url) {
+                        addImageToGallery(response.image_url, message);
+                    }
                 }
             },
             error: function(xhr) {
@@ -345,6 +356,18 @@ $(document).ready(function() {
             }
         });
     });
+
+    // Function to add image to gallery
+    function addImageToGallery(imageUrl, prompt) {
+        const gallery = $('#imageGallery');
+        const imageElement = `
+            <div class="gallery-item">
+                <img src="${imageUrl}" alt="Generated image" class="img-fluid">
+                <div class="gallery-item-prompt">${prompt}</div>
+            </div>
+        `;
+        gallery.prepend(imageElement);
+    }
 });
 </script>
 {% endblock %}
