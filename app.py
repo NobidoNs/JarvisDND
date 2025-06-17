@@ -65,6 +65,15 @@ def login():
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
     
+    # Debug logging
+    print("=== OAuth Debug Information ===")
+    print(f"Environment REDIRECT_URI: {os.getenv('REDIRECT_URI')}")
+    print(f"Final REDIRECT_URI value: {REDIRECT_URI}")
+    print(f"Request URL: {request.url}")
+    print(f"Request Base URL: {request.base_url}")
+    print(f"Request Host: {request.host}")
+    print("=============================")
+    
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
         redirect_uri=REDIRECT_URI,
