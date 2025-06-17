@@ -260,14 +260,24 @@ body {
 
 .prompt-card {
     background-color: var(--card-bg);
-    border: none;
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     padding: 20px;
     position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    animation: fadeInPromptCard 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.3s, transform 0.3s;
 }
 
 .prompt-card:hover {
-    box-shadow: none;
+    box-shadow: 0 6px 24px rgba(255, 105, 180, 0.15), 0 1.5px 6px rgba(0,0,0,0.10);
+    transform: scale(1.025);
+    border-color: var(--primary-color);
+}
+
+@keyframes fadeInPromptCard {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .prompt-card h3 {
