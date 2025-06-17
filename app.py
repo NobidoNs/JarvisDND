@@ -37,7 +37,7 @@ if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(50), primary_key=True)
     email = db.Column(db.String(100), unique=True)
     name = db.Column(db.String(100))
     prompts = db.relationship('Prompt', backref='user', lazy=True)
@@ -47,11 +47,11 @@ class Prompt(db.Model):
     title = db.Column(db.String(200), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, user_id)
 
 @app.route('/')
 def index():
@@ -106,7 +106,7 @@ def callback():
         
         user = User.query.filter_by(email=users_email).first()
         if not user:
-            user = User(id=unique_id, name=users_name, email=users_email)
+            user = User(id=str(unique_id), name=users_name, email=users_email)
             db.session.add(user)
             db.session.commit()
         
