@@ -21,7 +21,7 @@ body {
 /* Navbar */
 .navbar {
     background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: none;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -64,20 +64,17 @@ body {
 /* Cards */
 .card {
     background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 15px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
 }
 
 .card-header {
     background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    border-radius: 20px 20px 0 0 !important;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0 !important;
     padding: 1.2rem 1.5rem;
 }
 
@@ -123,7 +120,7 @@ body {
     background-color: var(--dark-bg);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 10px 15px;
 }
 
@@ -147,7 +144,7 @@ body {
 /* Chat */
 #chatMessages {
     background-color: var(--dark-bg);
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 1rem;
     height: 400px;
     overflow-y: auto;
@@ -155,8 +152,8 @@ body {
 
 .message {
     background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 15px;
+    border: none;
+    border-radius: 8px;
     padding: 15px;
     margin-bottom: 15px;
     transition: transform 0.3s ease;
@@ -258,16 +255,14 @@ body {
 
 .prompt-card {
     background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border: none;
+    border-radius: 8px;
     padding: 20px;
-    transition: all 0.3s ease;
     position: relative;
 }
 
 .prompt-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 .prompt-card h3 {
@@ -315,16 +310,16 @@ body {
 }
 
 .feature-card {
-    background-color: white;
-    border-radius: 15px;
+    background-color: var(--card-bg);
+    border: none;
+    border-radius: 8px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    box-shadow: none;
 }
 
 .feature-card:hover {
-    transform: translateY(-5px);
+    box-shadow: none;
 }
 
 .feature-card i {
@@ -346,7 +341,7 @@ body {
 
 /* Tabs */
 .nav-tabs {
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: none;
     margin-bottom: 1.5rem;
 }
 
@@ -355,7 +350,7 @@ body {
     color: var(--text-secondary);
     font-weight: 600;
     padding: 0.75rem 1.5rem;
-    border-radius: 12px 12px 0 0;
+    border-radius: 8px;
     transition: all 0.3s ease;
 }
 
@@ -367,7 +362,7 @@ body {
 .nav-tabs .nav-link.active {
     color: var(--primary-color);
     background-color: var(--card-bg);
-    border-bottom: 2px solid var(--primary-color);
+    border-bottom: none;
 }
 
 /* Image Generator */
@@ -452,8 +447,8 @@ body {
 .tab-content {
     padding: 20px;
     background-color: var(--card-bg);
-    border-radius: 15px;
-    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    border: none;
     margin-top: 20px;
 }
 
@@ -553,16 +548,16 @@ body {
 
 .prompt-selector {
     background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    border: none;
+    border-radius: 8px;
     padding: 15px;
     margin-top: 15px;
 }
 
 .prompt-selector .form-check {
     background-color: var(--dark-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border: none;
+    border-radius: 6px;
     padding: 8px 12px;
     margin: 4px;
     transition: all 0.3s ease;
