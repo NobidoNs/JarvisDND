@@ -34,7 +34,8 @@ with app.app_context():
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
-REDIRECT_URI = os.getenv('REDIRECT_URI', 'https://jarvisdnd.onrender.com/login/callback')  # Dynamic redirect URI based on environment
+# Для локальной работы используйте http://localhost:5000/login/callback
+REDIRECT_URI = os.getenv('REDIRECT_URI', 'http://localhost:5000/login/callback')  # Dynamic redirect URI based on environment
 
 if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
     raise ValueError("Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env file")

@@ -1,373 +1,913 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard - JarvisDND{% endblock %}
+
 {% block content %}
-<div class="dashboard-container">
-    <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab">
-                <i class="bi bi-chat-dots me-2"></i>AI Assistant
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="prompts-tab" data-bs-toggle="tab" data-bs-target="#prompts" type="button" role="tab">
-                <i class="bi bi-journal-text me-2"></i>Prompts
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image" type="button" role="tab">
-                <i class="bi bi-image me-2"></i>Image Generator
-            </button>
-        </li>
-    </ul>
+<div class="container">
+    <div class="dashboard-header fade-in-up">
+        <h1 class="page-title fantasy-title">
+            <i class="fas fa-tachometer-alt"></i>
+            Welcome back, {{ current_user.name }}!
+        </h1>
+        <p class="page-subtitle text-muted">
+            Manage your prompts and chat with your AI D&D assistant
+        </p>
+    </div>
 
-    <div class="tab-content" id="dashboardTabsContent">
-        <!-- Chat Tab -->
-        <div class="tab-pane fade show active" id="chat" role="tabpanel">
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="bi bi-chat-dots me-2"></i>AI DM Assistant
-                            </h5>
-                            <div class="chat-container" id="chatContainer">
-                                <div class="welcome-message text-center">
-                                    <i class="bi bi-stars"></i>
-                                    <h3>Welcome to your AI DM Assistant!</h3>
-                                    <p>Ask me anything about D&D, from rules to story ideas.</p>
-                                </div>
-                            </div>
-                            <form id="chatForm" class="mt-3">
-                                <div class="chat-input-container">
-                                    <input type="text" class="form-control" id="messageInput" placeholder="Ask your question...">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="bi bi-send"></i>
-                                    </button>
-                                </div>
-                                <div class="prompt-selector mb-3">
-                                    <label class="form-label">Select prompts to use for generation:</label>
-                                    <div id="promptCheckboxes" class="d-flex flex-wrap gap-2">
-                                        <!-- Prompts will be loaded here -->
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+    <div class="dashboard-grid">
+        <!-- Chat Section -->
+        <div class="chat-section">
+            <div class="card chat-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-comments"></i>
+                        AI Assistant
+                    </h2>
+                    <div class="chat-controls">
+                        <button id="clearChat" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-trash"></i> Clear Chat
+                        </button>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="bi bi-images me-2"></i>Generated Images
-                            </h5>
-                            <div class="image-gallery" id="imageGallery">
-                                <!-- Generated images will be displayed here -->
+                
+                <div class="chat-container">
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="welcome-message">
+                            <div class="assistant-avatar">
+                                <i class="fas fa-dragon"></i>
                             </div>
+                            <div class="message-content">
+                                <p>Greetings, adventurer! I'm your AI D&D assistant. Ask me anything about rules, lore, or get help with your campaigns!</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-section">
+                        <div class="selected-prompts" id="selectedPrompts"></div>
+                        <div class="chat-input-container">
+                            <textarea id="messageInput" placeholder="Ask about D&D rules, request scene descriptions, or get campaign ideas..." rows="3"></textarea>
+                            <button id="sendMessage" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Send
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Prompts Tab -->
-        <div class="tab-pane fade" id="prompts" role="tabpanel">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-journal-text me-2"></i>Your Prompts
-                    </h5>
-                    <form id="promptForm" class="mb-4">
-                        <div class="mb-3">
-                            <label for="promptTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="promptTitle" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="promptContent" class="form-label">Content</label>
-                            <textarea class="form-control" id="promptContent" rows="3" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-2"></i>Add Prompt
-                        </button>
-                    </form>
-                    <div id="promptsList" class="prompts-grid"></div>
+        <!-- Prompts Section -->
+        <div class="prompts-section">
+            <div class="card prompts-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-scroll"></i>
+                        Your Prompts
+                    </h2>
+                    <button id="addPromptBtn" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add Prompt
+                    </button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Image Generator Tab -->
-        <div class="tab-pane fade" id="image" role="tabpanel">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <i class="bi bi-image me-2"></i>Image Generator
-                    </h5>
-                    <form id="imageForm" class="mb-4">
-                        <div class="mb-3">
-                            <label for="imagePrompt" class="form-label">Describe the scene or character</label>
-                            <textarea class="form-control" id="imagePrompt" rows="3" required 
-                                    placeholder="Describe what you want to generate..."></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-magic me-2"></i>Generate Image
-                        </button>
-                    </form>
-                    <div id="imageResult" class="text-center"></div>
+                
+                <div class="prompts-container">
+                    <div id="promptsList" class="prompts-list">
+                        <!-- Prompts will be loaded here -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<!-- Prompt Modal -->
+<div id="promptModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-scroll"></i>
+                <span id="modalTitle">Add New Prompt</span>
+            </h3>
+            <button class="modal-close" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="promptForm">
+            <div class="form-group">
+                <label for="promptTitle" class="form-label">Title</label>
+                <input type="text" id="promptTitle" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="promptContent" class="form-label">Content</label>
+                <textarea id="promptContent" class="form-control" rows="6" required></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    <span id="saveButtonText">Save Prompt</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    color: var(--secondary-color);
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    min-height: 70vh;
+}
+
+/* Chat Styles */
+.chat-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 0;
+    max-height: 500px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--darker-bg);
+}
+
+.welcome-message,
+.message {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+}
+
+.user-message {
+    flex-direction: row-reverse;
+}
+
+.assistant-avatar,
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.assistant-avatar {
+    background: var(--gradient-primary);
+    color: white;
+}
+
+.user-avatar {
+    background: var(--accent-color);
+    color: white;
+}
+
+.message-content {
+    flex: 1;
+    background: var(--dark-bg);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.user-message .message-content {
+    background: var(--primary-color);
+}
+
+.message-image {
+    margin-top: 1rem;
+    border-radius: 8px;
+    max-width: 100%;
+    height: auto;
+}
+
+.selected-prompts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.selected-prompt-tag {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.selected-prompt-tag button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.8rem;
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.chat-input-container textarea {
+    flex: 1;
+    resize: none;
+}
+
+/* Prompts Styles */
+.prompts-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.prompts-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.prompts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.prompt-item {
+    background: var(--darker-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.prompt-item:hover {
+    border-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+.prompt-item.selected {
+    border-color: var(--primary-color);
+    background: rgba(139, 90, 60, 0.1);
+}
+
+.prompt-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.prompt-title {
+    font-weight: 600;
+    color: var(--light-text);
+    margin-bottom: 0.5rem;
+}
+
+.prompt-content {
+    color: var(--muted-text);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.prompt-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--gradient-dark);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid var(--border-color);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    font-size: 1.3rem;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--muted-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    color: var(--light-text);
+    background: var(--border-color);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    border-top-color: var(--secondary-color);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .chat-messages {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-input-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .modal-content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+</style>
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Load prompts for the selector
-    function loadPromptCheckboxes() {
-        $.get('/api/prompts', function(prompts) {
-            console.log('Loaded prompts:', prompts); // Debug log
-            const promptCheckboxes = $('#promptCheckboxes');
-            promptCheckboxes.empty();
-            
-            prompts.forEach(prompt => {
-                promptCheckboxes.append(`
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="${prompt.id}" id="prompt-${prompt.id}">
-                        <label class="form-check-label" for="prompt-${prompt.id}">
-                            ${prompt.title}
-                        </label>
-                    </div>
-                `);
-            });
-        });
+class DashboardManager {
+    constructor() {
+        this.prompts = [];
+        this.selectedPrompts = [];
+        this.editingPromptId = null;
+        this.init();
     }
 
-    // Load prompts for the Prompts tab
-    function loadPrompts() {
-        $.get('/api/prompts', function(prompts) {
-            const promptsList = $('#promptsList');
-            promptsList.empty();
-            
-            prompts.forEach(prompt => {
-                promptsList.append(`
-                    <div class="prompt-card" data-id="${prompt.id}">
-                        <h3>${prompt.title}</h3>
-                        <p>${prompt.content}</p>
-                        <div class="prompt-actions">
-                            <button class="btn btn-sm btn-outline-primary edit-prompt">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger delete-prompt">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `);
-            });
-        });
+    init() {
+        this.loadPrompts();
+        this.bindEvents();
     }
 
-    // Load prompts when page loads
-    loadPromptCheckboxes();
-    loadPrompts();
-
-    // Handle prompt form submission
-    $('#promptForm').on('submit', function(e) {
-        e.preventDefault();
-        const title = $('#promptTitle').val();
-        const content = $('#promptContent').val();
-
-        $.ajax({
-            url: '/api/prompts',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ title, content }),
-            success: function() {
-                $('#promptTitle').val('');
-                $('#promptContent').val('');
-                loadPrompts();
-                loadPromptCheckboxes(); // Reload checkboxes too
+    bindEvents() {
+        // Chat events
+        document.getElementById('sendMessage').addEventListener('click', () => this.sendMessage());
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
             }
         });
-    });
+        document.getElementById('clearChat').addEventListener('click', () => this.clearChat());
 
-    // Modified chat form submission to handle images
-    $('#chatForm').on('submit', function(e) {
+        // Prompt events
+        document.getElementById('addPromptBtn').addEventListener('click', () => this.showPromptModal());
+        document.getElementById('closeModal').addEventListener('click', () => this.hidePromptModal());
+        document.getElementById('cancelBtn').addEventListener('click', () => this.hidePromptModal());
+        document.getElementById('promptForm').addEventListener('submit', (e) => this.savePrompt(e));
+
+        // Modal backdrop click
+        document.getElementById('promptModal').addEventListener('click', (e) => {
+            if (e.target.id === 'promptModal') {
+                this.hidePromptModal();
+            }
+        });
+    }
+
+    async loadPrompts() {
+        try {
+            const response = await axios.get('/api/prompts');
+            this.prompts = response.data;
+            this.renderPrompts();
+        } catch (error) {
+            console.error('Error loading prompts:', error);
+            this.showNotification('Error loading prompts', 'error');
+        }
+    }
+
+    renderPrompts() {
+        const promptsList = document.getElementById('promptsList');
+        
+        if (this.prompts.length === 0) {
+            promptsList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-scroll" style="font-size: 3rem; color: var(--muted-text); margin-bottom: 1rem;"></i>
+                    <p style="color: var(--muted-text); text-align: center;">
+                        No prompts yet. Create your first prompt to get started!
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        promptsList.innerHTML = this.prompts.map(prompt => `
+            <div class="prompt-item ${this.selectedPrompts.some(p => p.id === prompt.id) ? 'selected' : ''}" 
+                 data-prompt-id="${prompt.id}">
+                <div class="prompt-header">
+                    <h4 class="prompt-title">${this.escapeHtml(prompt.title)}</h4>
+                </div>
+                <p class="prompt-content">${this.escapeHtml(prompt.content)}</p>
+                <div class="prompt-actions">
+                    <button class="btn btn-sm btn-secondary edit-prompt" data-prompt-id="${prompt.id}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-prompt" data-prompt-id="${prompt.id}">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                    <button class="btn btn-sm btn-primary toggle-prompt" data-prompt-id="${prompt.id}">
+                        <i class="fas fa-${this.selectedPrompts.some(p => p.id === prompt.id) ? 'minus' : 'plus'}"></i>
+                        ${this.selectedPrompts.some(p => p.id === prompt.id) ? 'Remove' : 'Select'}
+                    </button>
+                </div>
+            </div>
+        `).join('');
+
+        // Bind prompt events
+        document.querySelectorAll('.edit-prompt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.editPrompt(parseInt(btn.dataset.promptId));
+            });
+        });
+
+        document.querySelectorAll('.delete-prompt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deletePrompt(parseInt(btn.dataset.promptId));
+            });
+        });
+
+        document.querySelectorAll('.toggle-prompt').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.togglePromptSelection(parseInt(btn.dataset.promptId));
+            });
+        });
+
+        document.querySelectorAll('.prompt-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.togglePromptSelection(parseInt(item.dataset.promptId));
+            });
+        });
+    }
+
+    togglePromptSelection(promptId) {
+        const prompt = this.prompts.find(p => p.id === promptId);
+        if (!prompt) return;
+
+        const existingIndex = this.selectedPrompts.findIndex(p => p.id === promptId);
+        
+        if (existingIndex > -1) {
+            this.selectedPrompts.splice(existingIndex, 1);
+        } else {
+            this.selectedPrompts.push(prompt);
+        }
+
+        this.renderPrompts();
+        this.renderSelectedPrompts();
+    }
+
+    renderSelectedPrompts() {
+        const container = document.getElementById('selectedPrompts');
+        
+        if (this.selectedPrompts.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = this.selectedPrompts.map(prompt => `
+            <div class="selected-prompt-tag">
+                <span>${this.escapeHtml(prompt.title)}</span>
+                <button onclick="dashboardManager.togglePromptSelection(${prompt.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    showPromptModal(prompt = null) {
+        this.editingPromptId = prompt ? prompt.id : null;
+        
+        document.getElementById('modalTitle').textContent = prompt ? 'Edit Prompt' : 'Add New Prompt';
+        document.getElementById('saveButtonText').textContent = prompt ? 'Update Prompt' : 'Save Prompt';
+        document.getElementById('promptTitle').value = prompt ? prompt.title : '';
+        document.getElementById('promptContent').value = prompt ? prompt.content : '';
+        
+        document.getElementById('promptModal').classList.add('show');
+        document.getElementById('promptTitle').focus();
+    }
+
+    hidePromptModal() {
+        document.getElementById('promptModal').classList.remove('show');
+        this.editingPromptId = null;
+        document.getElementById('promptForm').reset();
+    }
+
+    async savePrompt(e) {
         e.preventDefault();
-        const message = $('#messageInput').val().trim();
+        
+        const title = document.getElementById('promptTitle').value.trim();
+        const content = document.getElementById('promptContent').value.trim();
+        
+        if (!title || !content) {
+            this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+
+        const saveButton = e.target.querySelector('button[type="submit"]');
+        const originalText = saveButton.innerHTML;
+        saveButton.innerHTML = '<span class="spinner"></span> Saving...';
+        saveButton.disabled = true;
+
+        try {
+            if (this.editingPromptId) {
+                await axios.put(`/api/prompts/${this.editingPromptId}`, { title, content });
+                this.showNotification('Prompt updated successfully!', 'success');
+            } else {
+                await axios.post('/api/prompts', { title, content });
+                this.showNotification('Prompt created successfully!', 'success');
+            }
+            
+            await this.loadPrompts();
+            this.hidePromptModal();
+        } catch (error) {
+            console.error('Error saving prompt:', error);
+            this.showNotification('Error saving prompt', 'error');
+        } finally {
+            saveButton.innerHTML = originalText;
+            saveButton.disabled = false;
+        }
+    }
+
+    editPrompt(promptId) {
+        const prompt = this.prompts.find(p => p.id === promptId);
+        if (prompt) {
+            this.showPromptModal(prompt);
+        }
+    }
+
+    async deletePrompt(promptId) {
+        if (!confirm('Are you sure you want to delete this prompt?')) {
+            return;
+        }
+
+        try {
+            await axios.delete(`/api/prompts/${promptId}`);
+            this.showNotification('Prompt deleted successfully!', 'success');
+            
+            // Remove from selected prompts if it was selected
+            this.selectedPrompts = this.selectedPrompts.filter(p => p.id !== promptId);
+            this.renderSelectedPrompts();
+            
+            await this.loadPrompts();
+        } catch (error) {
+            console.error('Error deleting prompt:', error);
+            this.showNotification('Error deleting prompt', 'error');
+        }
+    }
+
+    async sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value.trim();
+        
         if (!message) return;
 
-        // Get selected prompts with their content
-        const selectedPrompts = [];
-        $('.prompt-selector input[type="checkbox"]:checked').each(function() {
-            const promptId = $(this).val();
-            const promptTitle = $(this).next('label').text().trim();
-            const promptContent = $(`#promptsList .prompt-card[data-id="${promptId}"] p`).text().trim();
-            selectedPrompts.push({
-                id: promptId,
-                title: promptTitle,
-                content: promptContent
-            });
-        });
+        const sendButton = document.getElementById('sendMessage');
+        const originalText = sendButton.innerHTML;
+        sendButton.innerHTML = '<span class="spinner"></span> Sending...';
+        sendButton.disabled = true;
+        messageInput.disabled = true;
 
-        // Add user message
-        appendMessage('user', message);
-        $('#messageInput').val('');
+        // Add user message to chat
+        this.addMessageToChat(message, 'user');
+        messageInput.value = '';
 
-        // Show loading indicator
-        const loadingId = appendMessage('assistant', '<div class="spinner-border spinner-border-sm" role="status"></div>');
-
-        // Send to server
-        $.ajax({
-            url: '/api/chat',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ 
+        try {
+            const response = await axios.post('/api/chat', {
                 message: message,
-                selected_prompts: selectedPrompts
-            }),
-            success: function(response) {
-                // Remove loading indicator and add response
-                $(`#message-${loadingId}`).remove();
-                if (response.error) {
-                    appendMessage('assistant', `<div class="alert alert-danger">${response.error}</div>`);
-                } else {
-                    // Create a container for text response
-                    const messageContent = `
-                        <div class="response-container">
-                            <div class="text-response">${response.response}</div>
-                        </div>
-                    `;
-                    appendMessage('assistant', messageContent);
+                selected_prompts: this.selectedPrompts
+            });
 
-                    // If there's an image, add it to the gallery
-                    if (response.image_url) {
-                        addImageToGallery(response.image_url, message);
-                    }
-                }
-            },
-            error: function(xhr) {
-                $(`#message-${loadingId}`).remove();
-                const errorMessage = xhr.responseJSON?.error || 'Failed to get response. Please try again.';
-                appendMessage('assistant', `<div class="alert alert-danger">${errorMessage}</div>`);
-            }
-        });
-    });
+            this.addMessageToChat(response.data.response, 'assistant', response.data.image_url);
+        } catch (error) {
+            console.error('Error sending message:', error);
+            this.addMessageToChat('Sorry, I encountered an error. Please try again.', 'assistant');
+            this.showNotification('Error sending message', 'error');
+        } finally {
+            sendButton.innerHTML = originalText;
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+            messageInput.focus();
+        }
+    }
 
-    // Helper function to append messages
-    function appendMessage(role, content) {
-        const messageId = Date.now();
-        const messageHtml = `
-            <div id="message-${messageId}" class="message ${role}-message">
+    addMessageToChat(content, sender, imageUrl = null) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        
+        const avatarClass = sender === 'user' ? 'user-avatar' : 'assistant-avatar';
+        const avatarIcon = sender === 'user' ? 'fas fa-user' : 'fas fa-dragon';
+        
+        messageDiv.innerHTML = `
+            <div class="${avatarClass}">
+                <i class="${avatarIcon}"></i>
+            </div>
+            <div class="message-content">
+                <p>${this.escapeHtml(content).replace(/\n/g, '<br>')}</p>
+                ${imageUrl ? `<img src="${imageUrl}" alt="Generated scene" class="message-image" loading="lazy">` : ''}
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    clearChat() {
+        if (!confirm('Are you sure you want to clear the chat history?')) {
+            return;
+        }
+        
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.innerHTML = `
+            <div class="welcome-message">
+                <div class="assistant-avatar">
+                    <i class="fas fa-dragon"></i>
+                </div>
                 <div class="message-content">
-                    ${content}
+                    <p>Greetings, adventurer! I'm your AI D&D assistant. Ask me anything about rules, lore, or get help with your campaigns!</p>
                 </div>
             </div>
         `;
-        $('#chatContainer').append(messageHtml);
-        $('#chatContainer').scrollTop($('#chatContainer')[0].scrollHeight);
-        return messageId;
     }
 
-    // Handle edit prompt
-    $(document).on('click', '.edit-prompt', function() {
-        const promptCard = $(this).closest('.prompt-card');
-        const promptId = promptCard.data('id');
-        const title = promptCard.find('h3').text();
-        const content = promptCard.find('p').text();
-
-        // Fill the form with prompt data
-        $('#promptTitle').val(title);
-        $('#promptContent').val(content);
-
-        // Change form submit handler temporarily
-        const originalSubmitHandler = $('#promptForm').off('submit').on('submit', function(e) {
-            e.preventDefault();
-            const newTitle = $('#promptTitle').val();
-            const newContent = $('#promptContent').val();
-
-            $.ajax({
-                url: `/api/prompts/${promptId}`,
-                method: 'PUT',
-                contentType: 'application/json',
-                data: JSON.stringify({ title: newTitle, content: newContent }),
-                success: function() {
-                    // Reset form and restore original submit handler
-                    $('#promptTitle').val('');
-                    $('#promptContent').val('');
-                    $('#promptForm').off('submit').on('submit', originalSubmitHandler);
-                    loadPrompts();
-                }
-            });
-        });
-    });
-
-    // Handle delete prompt
-    $(document).on('click', '.delete-prompt', function() {
-        if (confirm('Are you sure you want to delete this prompt?')) {
-            const promptId = $(this).closest('.prompt-card').data('id');
-            
-            $.ajax({
-                url: `/api/prompts/${promptId}`,
-                method: 'DELETE',
-                success: function() {
-                    loadPrompts();
-                }
-            });
-        }
-    });
-
-    // Image generation
-    $('#imageForm').on('submit', function(e) {
-        e.preventDefault();
-        const prompt = $('#imagePrompt').val();
-        
-        // Show loading spinner
-        $('#imageResult').html('<div class="spinner-border text-primary" role="status"></div>');
-        
-        $.ajax({
-            url: '/api/generate-image',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ prompt: prompt }),
-            success: function(response) {
-                if (response.image_url) {
-                    const img = new Image();
-                    img.onload = function() {
-                        $('#imageResult').html(`
-                            <div class="card">
-                                <img src="${response.image_url}" class="card-img-top" alt="Generated image">
-                                <div class="card-body">
-                                    <p class="card-text">${prompt}</p>
-                                </div>
-                            </div>
-                        `);
-                    };
-                    img.onerror = function() {
-                        $('#imageResult').html('<div class="alert alert-danger">Failed to load image. Please try again.</div>');
-                    };
-                    img.src = response.image_url;
-                } else {
-                    $('#imageResult').html('<div class="alert alert-danger">Failed to generate image. Please try again.</div>');
-                }
-            },
-            error: function() {
-                $('#imageResult').html('<div class="alert alert-danger">Failed to generate image. Please try again.</div>');
-            }
-        });
-    });
-
-    // Function to add image to gallery
-    function addImageToGallery(imageUrl, prompt) {
-        const gallery = $('#imageGallery');
-        const imageElement = `
-            <div class="gallery-item">
-                <img src="${imageUrl}" alt="Generated image" class="img-fluid">
-                <div class="gallery-item-prompt">${prompt}</div>
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
             </div>
+            <button class="notification-close">
+                <i class="fas fa-times"></i>
+            </button>
         `;
-        gallery.prepend(imageElement);
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+
+        // Manual close
+        notification.querySelector('.notification-close').addEventListener('click', () => {
+            notification.remove();
+        });
+
+        // Animate in
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
     }
-});
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize dashboard
+const dashboardManager = new DashboardManager();
 </script>
+
+<style>
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--gradient-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: var(--shadow-heavy);
+    z-index: 3000;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    max-width: 400px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-success {
+    border-left: 4px solid var(--success-color);
+}
+
+.notification-error {
+    border-left: 4px solid var(--danger-color);
+}
+
+.notification-info {
+    border-left: 4px solid var(--secondary-color);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--light-text);
+}
+
+.notification-content i {
+    font-size: 1.2rem;
+}
+
+.notification-success .notification-content i {
+    color: var(--success-color);
+}
+
+.notification-error .notification-content i {
+    color: var(--danger-color);
+}
+
+.notification-info .notification-content i {
+    color: var(--secondary-color);
+}
+
+.notification-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--muted-text);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.notification-close:hover {
+    color: var(--light-text);
+    background: var(--border-color);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+/* Scrollbar Styles */
+.chat-messages::-webkit-scrollbar,
+.prompts-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track,
+.prompts-container::-webkit-scrollbar-track {
+    background: var(--darker-bg);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb,
+.prompts-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.prompts-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+</style>
+{% endblock %}
 {% endblock %}
