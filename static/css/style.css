@@ -761,10 +761,11 @@ body::before {
 
 .prompt-selector .form-check:hover .form-check-label {
     color: white;
+    font-weight: 600;
 }
 
 .prompt-selector .form-check-input:checked + .form-check-label {
-    color: var(--primary-color);
+    color: rgb(162, 0, 255);
     font-weight: 600;
 }
 
