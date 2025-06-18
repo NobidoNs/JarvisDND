@@ -755,8 +755,8 @@ body::before {
 }
 
 .prompt-selector .form-check:hover {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
 }
 
 .prompt-selector .form-check:hover .form-check-label {
@@ -770,8 +770,10 @@ body::before {
 }
 
 .prompt-selector .form-check-input:checked {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    background-color: rgb(162, 0, 255);
+    border-color: rgb(162, 0, 255);
+    /* background-color: var(--primary-color);
+    border-color: var(--primary-color); */
 }
 
 /* Image Gallery */
