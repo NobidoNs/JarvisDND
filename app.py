@@ -189,7 +189,7 @@ def chat():
 
         # Generate image based on the enhanced prompt
         image_response = client.images.generate(
-            model="flux",
+            model="sdxl-1.0",
             prompt=image_prompt,
             response_format="url"
         )
