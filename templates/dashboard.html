@@ -238,9 +238,12 @@ $(document).ready(function() {
                     `;
                     appendMessage('assistant', messageContent);
 
-                    // If there's an image, add it to the gallery
-                    if (response.image_url) {
-                        addImageToGallery(response.image_url, message);
+                    // Add images to the gallery
+                    if (response.user_image_url) {
+                        addImageToGallery(response.user_image_url, message);
+                    }
+                    if (response.ai_image_url) {
+                        addImageToGallery(response.ai_image_url, response.response);
                     }
                 }
             },

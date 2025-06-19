@@ -147,9 +147,6 @@ def chat():
     message = data.get('message')
     selected_prompts = data.get('selected_prompts', [])
     
-    # print(f"Received message: {message}")  # Debug log
-    # print(f"Selected prompts: {selected_prompts}")  # Debug log
-    
     if not message:
         return jsonify({"error": "No message provided"}), 400
     
@@ -177,26 +174,41 @@ def chat():
         if not response.choices:
             return jsonify({"error": "No response generated"}), 500
 
+        ai_response = response.choices[0].message.content
+
         # Create image prompt using the content directly from selected prompts
-        image_prompt = message
+        user_image_prompt = message
         if selected_prompts:
             # Extract content from selected prompts
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
                 combined_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
-                image_prompt = combined_prompt
-                # print(f"Using combined prompt: {image_prompt}")  # Debug log
+                user_image_prompt = combined_prompt
 
-        # Generate image based on the enhanced prompt
-        image_response = client.images.generate(
+        # Generate first image based on user's input
+        user_image_response = client.images.generate(
             model="sdxl-1.0",
-            prompt=image_prompt,
+            prompt=user_image_prompt,
+            response_format="url"
+        )
+
+        # Generate second image based on AI's response
+        ai_image_prompt = f"Dungeons and Dragons scene: {ai_response}"
+        if selected_prompts:
+            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+            if prompt_contents:
+                ai_image_prompt = f"Style and details: {' '.join(prompt_contents)}. {ai_image_prompt}"
+
+        ai_image_response = client.images.generate(
+            model="sdxl-1.0",
+            prompt=ai_image_prompt,
             response_format="url"
         )
         
         return jsonify({
-            "response": response.choices[0].message.content,
-            "image_url": image_response.data[0].url
+            "response": ai_response,
+            "user_image_url": user_image_response.data[0].url,
+            "ai_image_url": ai_image_response.data[0].url
         })
     except Exception as e:
         print(f"Chat error: {str(e)}")  # For debugging

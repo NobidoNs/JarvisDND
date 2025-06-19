@@ -42,7 +42,16 @@ async function sendMessage() {
         if (data.error) {
             appendMessage('error', data.error);
         } else {
+            // Append AI's text response
             appendMessage('assistant', data.response);
+            
+            // Append both images if they exist
+            if (data.user_image_url) {
+                appendImage(data.user_image_url);
+            }
+            if (data.ai_image_url) {
+                appendImage('AI:', data.user_image_url);
+            }
         }
     } catch (error) {
         console.error('Error:', error);
@@ -97,5 +106,17 @@ function appendMessage(role, content) {
     
     messageDiv.innerHTML = contentWithLinks;
     messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function appendImage(caption, imageUrl) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const imageDiv = document.createElement('div');
+    imageDiv.className = 'message image';
+    imageDiv.innerHTML = `
+        <div class="image-caption">${caption}</div>
+        <img src="${imageUrl}" alt="Generated image" class="img-fluid">
+    `;
+    messagesContainer.appendChild(imageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 } 

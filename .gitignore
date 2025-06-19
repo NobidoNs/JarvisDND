@@ -192,3 +192,5 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+har_and_cookies/.nodriver_is_open
+har_and_cookies/auth_ARTA.json
