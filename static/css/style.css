@@ -225,6 +225,21 @@ body::before {
     box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
 }
 
+/* Button animations */
+.btn-primary {
+    animation: slideInUp 0.8s ease-out 0.5s both;
+}
+
+.btn-primary:hover {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
 /* Forms */
 .form-control {
     background: linear-gradient(135deg, var(--dark-bg) 0%, rgba(26, 26, 46, 0.8) 100%);
@@ -370,11 +385,10 @@ body::before {
 
 /* Welcome Message */
 .welcome-section {
-    padding: 80px 0;
+    min-height: 80vh;
+    padding: 50px;
     background: 
-        linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 50%, var(--dark-bg) 100%),
-        radial-gradient(circle at 30% 70%, rgba(255, 105, 180, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 70% 30%, rgba(147, 112, 219, 0.1) 0%, transparent 50%);
+        linear-gradient(135deg, var(--dark-bg) 0%, var(--card-bg) 50%, var(--dark-bg) 100%);
     position: relative;
     overflow: hidden;
 }
@@ -387,9 +401,8 @@ body::before {
     right: 0;
     bottom: 0;
     background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 105, 180, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(147, 112, 219, 0.05) 0%, transparent 50%);
-    animation: float 6s ease-in-out infinite;
+        radial-gradient(circle at 20% 80%, rgba(255, 105, 180, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(147, 112, 219, 0.1) 0%, transparent 50%);
 }
 
 @keyframes float {
@@ -404,8 +417,6 @@ body::before {
     background-clip: text;
     font-size: 3.5rem;
     margin-bottom: 1rem;
-    text-shadow: 0 0 30px rgba(255, 105, 180, 0.3);
-    animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
@@ -500,38 +511,91 @@ body::before {
 .features-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 30px;
     margin-top: 30px;
+    padding: 20px;
 }
 
 .feature-card {
-    background-color: var(--card-bg);
-    border: none;
-    border-radius: 8px;
-    padding: 20px;
+    background: var(--gradient-card);
+    border: 2px solid rgba(255, 105, 180, 0.2);
+    border-radius: 15px;
+    padding: 30px 20px;
     text-align: center;
-    box-shadow: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInScale 0.6s ease-out both;
+}
+
+.feature-card:nth-child(1) { animation-delay: 0.1s; }
+.feature-card:nth-child(2) { animation-delay: 0.2s; }
+.feature-card:nth-child(3) { animation-delay: 0.3s; }
+.feature-card:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s;
+}
+
+.feature-card:hover::before {
+    left: 100%;
 }
 
 .feature-card:hover {
-    box-shadow: none;
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 20px 40px rgba(255, 105, 180, 0.3);
+    border-color: rgba(255, 105, 180, 0.5);
 }
 
 .feature-card i {
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 15px;
+    font-size: 3rem;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover i {
+    transform: scale(1.2) rotate(5deg);
 }
 
 .feature-card h3 {
-    color: var(--text-primary);
-    font-size: 1.2rem;
-    margin-bottom: 10px;
+    background: var(--gradient-text);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    font-weight: 700;
 }
 
 .feature-card p {
     color: var(--text-secondary);
     margin-bottom: 0;
+    font-size: 1rem;
+    line-height: 1.6;
 }
 
 /* Tabs */
@@ -585,17 +649,72 @@ body::before {
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 600px) {
+    .welcome-section h1 {
+        font-size: 2.2rem;
+    }
+    
+    .welcome-section .lead {
+        font-size: 1rem;
+    }
+    
     .features-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
     }
     
-    .prompts-grid {
-        grid-template-columns: 1fr;
+    .feature-card {
+        padding: 15px 10px;
     }
     
-    .message {
-        max-width: 90%;
+    .feature-card i {
+        font-size: 2rem;
+    }
+    
+    .feature-card h3 {
+        font-size: 1rem;
+    }
+    
+    .feature-card p {
+        font-size: 0.85rem;
+    }
+    
+    .welcome-section .fas.fa-dragon {
+        font-size: 2.2rem;
+    }
+}
+
+@media (max-height: 600px) {
+    .welcome-section h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .welcome-section .lead {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+    }
+    
+    .features-grid {
+        gap: 10px;
+    }
+    
+    .feature-card {
+        padding: 12px 8px;
+    }
+    
+    .feature-card i {
+        font-size: 1.8rem;
+        margin-bottom: 8px;
+    }
+    
+    .feature-card h3 {
+        font-size: 0.95rem;
+        margin-bottom: 5px;
+    }
+    
+    .feature-card p {
+        font-size: 0.8rem;
     }
 }
 
@@ -755,25 +874,23 @@ body::before {
 }
 
 .prompt-selector .form-check:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    background-color: rgb(117 70 215);
+    border-color: rgb(117 70 215);
 }
 
 .prompt-selector .form-check:hover .form-check-label {
     color: white;
-    font-weight: 600;
+    /* font-weight: 600; */
 }
 
 .prompt-selector .form-check-input:checked + .form-check-label {
-    color: rgb(162, 0, 255);
-    font-weight: 600;
+    color: rgb(168 124 205);
+    /* font-weight: 600; */
 }
 
 .prompt-selector .form-check-input:checked {
     background-color: rgb(162, 0, 255);
     border-color: rgb(162, 0, 255);
-    /* background-color: var(--primary-color);
-    border-color: var(--primary-color); */
 }
 
 /* Image Gallery */
