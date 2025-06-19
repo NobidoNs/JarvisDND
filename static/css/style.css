@@ -600,7 +600,8 @@ body::before {
 
 /* Tabs */
 .nav-tabs {
-    border-bottom: none;
+    background: transparent !important;
+    border: none;
     margin-bottom: 1.5rem;
 }
 
@@ -608,20 +609,29 @@ body::before {
     border: none;
     color: var(--text-secondary);
     font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
+    padding: 1rem 2rem;
+    border-radius: 12px;
     transition: all 0.3s ease;
+    font-size: 1.1rem;
+    margin: 0 0.5rem;
 }
 
 .nav-tabs .nav-link:hover {
     color: var(--primary-color);
     background-color: var(--dark-bg);
+    transform: translateY(-2px);
 }
 
 .nav-tabs .nav-link.active {
     color: var(--primary-color);
     background-color: var(--card-bg);
     border-bottom: none;
+    box-shadow: 0 4px 15px rgba(255, 105, 180, 0.2);
+}
+
+.nav-tabs .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
 }
 
 /* Image Generator */
@@ -740,16 +750,12 @@ body::before {
     }
 
     #dashboardTabs .nav-link {
-        padding: 8px 5px !important;
-        margin: 0 1px !important;
-        font-size: 0.9rem !important;
-        text-align: center !important;
-        white-space: nowrap !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.95rem !important;
     }
 
     #dashboardTabs .nav-link i {
-        margin-right: 2px !important;
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
     }
 }
 
@@ -996,12 +1002,35 @@ body::before {
 
 /* Adjust chat container height */
 .chat-container {
-    height: 500px;
-    overflow-y: auto;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    background-color: var(--dark-bg);
-    padding: 15px;
+    background: transparent !important;
+    position: relative;
+    border: none !important;
+    border-radius: 15px;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.chat-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 15px;
+    border: 2px solid transparent;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.card-body {
+    padding: 1.5rem;
 }
 
 /* Custom scrollbar for gallery */
