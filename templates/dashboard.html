@@ -111,7 +111,17 @@
                             <i class="bi bi-magic me-2"></i>Generate Image
                         </button>
                     </form>
-                    <div id="imageResult" class="text-center"></div>
+                    <div id="imageResult" class="text-center mb-4"></div>
+                    
+                    <!-- Image Gallery Section -->
+                    <div class="mt-4">
+                        <h5 class="card-title">
+                            <i class="bi bi-images me-2"></i>Your Generated Images
+                        </h5>
+                        <div id="imageGalleryTab" class="image-gallery-grid">
+                            <!-- Images will be loaded here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -165,9 +175,43 @@ $(document).ready(function() {
         });
     }
 
-    // Load prompts when page loads
+    // Load all images
+    function loadImages() {
+        $.get('/api/images', function(images) {
+            const galleryTab = $('#imageGalleryTab');
+            galleryTab.empty();
+            
+            images.forEach(image => {
+                const imageElement = `
+                    <div class="gallery-item">
+                        <img src="${image.url}" alt="Generated image" class="img-fluid">
+                        <div class="gallery-item-prompt">
+                            <div class="prompt-text">${image.prompt}</div>
+                            <div class="prompt-meta">
+                                <small class="text-muted">
+                                    ${new Date(image.created_at).toLocaleString()}
+                                    <span class="badge ${image.source === 'chat' ? 'bg-info' : 'bg-primary'} ms-2">
+                                        ${image.source === 'chat' ? 'From Chat' : 'Image Generator'}
+                                    </span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                galleryTab.append(imageElement);
+            });
+        });
+    }
+
+    // Load prompts and images when page loads
     loadPromptCheckboxes();
     loadPrompts();
+    loadImages();
+
+    // Load images when Image Generator tab is shown
+    $('button[data-bs-target="#image"]').on('shown.bs.tab', function (e) {
+        loadImages();
+    });
 
     // Handle prompt form submission
     $('#promptForm').on('submit', function(e) {
@@ -318,7 +362,7 @@ $(document).ready(function() {
         }
     });
 
-    // Image generation
+    // Modified image generation form submission
     $('#imageForm').on('submit', function(e) {
         e.preventDefault();
         const prompt = $('#imagePrompt').val();
@@ -343,6 +387,8 @@ $(document).ready(function() {
                                 </div>
                             </div>
                         `);
+                        // Reload the gallery to show the new image
+                        loadImages();
                     };
                     img.onerror = function() {
                         $('#imageResult').html('<div class="alert alert-danger">Failed to load image. Please try again.</div>');
@@ -368,6 +414,8 @@ $(document).ready(function() {
             </div>
         `;
         gallery.prepend(imageElement);
+        // Also reload the main image gallery tab
+        loadImages();
     }
 });
 </script>

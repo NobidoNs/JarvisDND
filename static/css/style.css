@@ -1041,3 +1041,72 @@ body::before {
     text-decoration: none;
     transition: all 0.3s ease;
 }
+
+/* Image Gallery Grid */
+.image-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.image-gallery-grid .gallery-item {
+    position: relative;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: var(--card-bg);
+}
+
+.image-gallery-grid .gallery-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.image-gallery-grid .gallery-item img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 15px 15px 0 0;
+}
+
+.image-gallery-grid .gallery-item-prompt {
+    padding: 1rem;
+    background: var(--card-bg);
+}
+
+.image-gallery-grid .prompt-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.image-gallery-grid .prompt-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.image-gallery-grid .badge {
+    font-size: 0.7rem;
+    padding: 0.3em 0.6em;
+}
+
+@media (max-width: 768px) {
+    .image-gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .image-gallery-grid .gallery-item img {
+        height: 200px;
+    }
+}

@@ -46,13 +46,22 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True)
     name = db.Column(db.String(100))
     prompts = db.relationship('Prompt', backref='user', lazy=True)
+    images = db.relationship('GeneratedImage', backref='user', lazy=True)
 
 class Prompt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+
+class GeneratedImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(500), nullable=False)
+    prompt = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+    source = db.Column(db.String(50), default='image_generator')  # 'image_generator' or 'chat'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -192,6 +201,15 @@ def chat():
             response_format="url"
         )
 
+        # Save user's image to database
+        user_image = GeneratedImage(
+            url=user_image_response.data[0].url,
+            prompt=user_image_prompt,
+            user_id=current_user.id,
+            source='chat'
+        )
+        db.session.add(user_image)
+
         # Generate second image based on AI's response
         ai_image_prompt = f"Dungeons and Dragons scene: {ai_response}"
         if selected_prompts:
@@ -204,6 +222,16 @@ def chat():
             prompt=ai_image_prompt,
             response_format="url"
         )
+
+        # Save AI's image to database
+        ai_image = GeneratedImage(
+            url=ai_image_response.data[0].url,
+            prompt=ai_image_prompt,
+            user_id=current_user.id,
+            source='chat'
+        )
+        db.session.add(ai_image)
+        db.session.commit()
         
         return jsonify({
             "response": ai_response,
@@ -275,12 +303,34 @@ def generate_image():
             prompt=prompt,
             response_format="url"
         )
+
+        # Save generated image to database
+        image = GeneratedImage(
+            url=response.data[0].url,
+            prompt=prompt,
+            user_id=current_user.id,
+            source='image_generator'
+        )
+        db.session.add(image)
+        db.session.commit()
         
         return jsonify({"image_url": response.data[0].url})
         
     except Exception as e:
         print(f"Error generating image: {str(e)}")  # For debugging
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/images', methods=['GET'])
+@login_required
+def get_images():
+    images = GeneratedImage.query.filter_by(user_id=current_user.id).order_by(GeneratedImage.created_at.desc()).all()
+    return jsonify([{
+        'id': img.id,
+        'url': img.url,
+        'prompt': img.prompt,
+        'created_at': img.created_at.isoformat(),
+        'source': img.source
+    } for img in images])
 
 if __name__ == '__main__':
     with app.app_context():
