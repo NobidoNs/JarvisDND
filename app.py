@@ -332,6 +332,28 @@ def get_images():
         'source': img.source
     } for img in images])
 
+@app.route('/api/images/<int:image_id>', methods=['PUT', 'DELETE'])
+@login_required
+def handle_image(image_id):
+    image = GeneratedImage.query.filter_by(id=image_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'PUT':
+        data = request.get_json()
+        image.prompt = data['prompt']
+        db.session.commit()
+        return jsonify({
+            'id': image.id,
+            'url': image.url,
+            'prompt': image.prompt,
+            'created_at': image.created_at.isoformat(),
+            'source': image.source
+        })
+    
+    elif request.method == 'DELETE':
+        db.session.delete(image)
+        db.session.commit()
+        return '', 204
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

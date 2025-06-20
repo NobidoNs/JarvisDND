@@ -183,17 +183,27 @@ $(document).ready(function() {
             
             images.forEach(image => {
                 const imageElement = `
-                    <div class="gallery-item">
+                    <div class="gallery-item" data-id="${image.id}">
                         <img src="${image.url}" alt="Generated image" class="img-fluid">
                         <div class="gallery-item-prompt">
                             <div class="prompt-text">${image.prompt}</div>
                             <div class="prompt-meta">
-                                <small class="text-muted">
-                                    ${new Date(image.created_at).toLocaleString()}
-                                    <span class="badge ${image.source === 'chat' ? 'bg-info' : 'bg-primary'} ms-2">
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted me-2">
+                                        ${new Date(image.created_at).toLocaleString()}
+                                    </small>
+                                    <span class="badge ${image.source === 'chat' ? 'bg-info' : 'bg-primary'} me-2">
                                         ${image.source === 'chat' ? 'From Chat' : 'Image Generator'}
                                     </span>
-                                </small>
+                                </div>
+                                <div class="image-actions">
+                                    <button class="btn btn-sm btn-outline-primary edit-image me-1" title="Edit prompt">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-image" title="Delete image">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -417,6 +427,70 @@ $(document).ready(function() {
         // Also reload the main image gallery tab
         loadImages();
     }
+
+    // Handle edit image
+    $(document).on('click', '.edit-image', function() {
+        const galleryItem = $(this).closest('.gallery-item');
+        const imageId = galleryItem.data('id');
+        const promptText = galleryItem.find('.prompt-text').text();
+        
+        // Create an input field for editing
+        const promptElement = galleryItem.find('.prompt-text');
+        promptElement.html(`
+            <div class="input-group">
+                <textarea class="form-control" rows="3">${promptText}</textarea>
+                <button class="btn btn-primary save-image-prompt" type="button">Save</button>
+                <button class="btn btn-secondary cancel-edit-prompt" type="button">Cancel</button>
+            </div>
+        `);
+    });
+
+    // Handle save edited prompt
+    $(document).on('click', '.save-image-prompt', function() {
+        const galleryItem = $(this).closest('.gallery-item');
+        const imageId = galleryItem.data('id');
+        const newPrompt = $(this).siblings('textarea').val();
+        
+        $.ajax({
+            url: `/api/images/${imageId}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ prompt: newPrompt }),
+            success: function(response) {
+                // Update the prompt text
+                const promptElement = galleryItem.find('.prompt-text');
+                promptElement.html(response.prompt);
+            },
+            error: function() {
+                alert('Failed to update prompt. Please try again.');
+                loadImages(); // Reload all images to restore original state
+            }
+        });
+    });
+
+    // Handle cancel edit
+    $(document).on('click', '.cancel-edit-prompt', function() {
+        loadImages(); // Reload all images to restore original state
+    });
+
+    // Handle delete image
+    $(document).on('click', '.delete-image', function() {
+        if (confirm('Are you sure you want to delete this image?')) {
+            const galleryItem = $(this).closest('.gallery-item');
+            const imageId = galleryItem.data('id');
+            
+            $.ajax({
+                url: `/api/images/${imageId}`,
+                method: 'DELETE',
+                success: function() {
+                    loadImages(); // Reload all images
+                },
+                error: function() {
+                    alert('Failed to delete image. Please try again.');
+                }
+            });
+        }
+    });
 });
 </script>
 {% endblock %}

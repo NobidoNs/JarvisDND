@@ -1110,3 +1110,43 @@ body::before {
         height: 200px;
     }
 }
+
+/* Image actions */
+.image-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.image-actions button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.image-actions button i {
+    font-size: 0.875rem;
+}
+
+.gallery-item .input-group {
+    margin-top: 0.5rem;
+}
+
+.gallery-item .input-group textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-size: 0.9rem;
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.gallery-item .input-group textarea:focus {
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+    border-color: rgb(117 70 215);
+    box-shadow: 0 0 0 0.2rem rgba(117, 70, 215, 0.25);
+}
+
+.gallery-item .input-group .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
