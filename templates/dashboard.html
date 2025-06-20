@@ -151,6 +151,7 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    let currentSessionId = null; // id активной сессии чата
     // Load prompts for the selector
     function loadPromptCheckboxes() {
         $.get('/api/prompts', function(prompts) {
@@ -290,6 +291,24 @@ $(document).ready(function() {
         });
     });
 
+    // Загрузка диалога из истории в основной чат
+    $(document).on('click', '.view-chat', function() {
+        const sessionId = $(this).data('id');
+        currentSessionId = sessionId;
+        $('#chat-tab').tab('show');
+        const chatContainer = $('#chatContainer');
+        chatContainer.empty();
+        $.get(`/api/chat-history/${sessionId}`, function(messages) {
+            if (!messages.length) {
+                chatContainer.append('<div class="text-muted">No messages in this session.</div>');
+                return;
+            }
+            messages.forEach(msg => {
+                appendMessage(msg.role, msg.content);
+            });
+        });
+    });
+
     // Modified chat form submission to handle images
     $('#chatForm').on('submit', function(e) {
         e.preventDefault();
@@ -323,7 +342,8 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({ 
                 message: message,
-                selected_prompts: selectedPrompts
+                selected_prompts: selectedPrompts,
+                session_id: currentSessionId // <-- добавляем id сессии, если есть
             }),
             success: function(response) {
                 // Remove loading indicator and add response
@@ -338,13 +358,16 @@ $(document).ready(function() {
                         </div>
                     `;
                     appendMessage('assistant', messageContent);
-
                     // Add images to the gallery
                     if (response.user_image_url) {
                         addImageToGallery(response.user_image_url, message);
                     }
                     if (response.ai_image_url) {
                         addImageToGallery(response.ai_image_url, 'AI: ' + message);
+                    }
+                    // Обновляем текущую сессию, если сервер вернул новый session_id
+                    if (response.session_id) {
+                        currentSessionId = response.session_id;
                     }
                 }
             },

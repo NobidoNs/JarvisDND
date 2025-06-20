@@ -396,6 +396,22 @@ def chat_history():
         })
     return jsonify(result)
 
+@app.route('/api/chat-history/<int:session_id>', methods=['GET'])
+@login_required
+def chat_history_session(session_id):
+    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        return jsonify([])
+    messages = ChatMessage.query.filter_by(session_id=session.id).order_by(ChatMessage.created_at.asc()).all()
+    return jsonify([
+        {
+            'id': m.id,
+            'role': m.role,
+            'content': m.content,
+            'created_at': m.created_at.isoformat()
+        } for m in messages
+    ])
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
