@@ -154,6 +154,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Add marked.js and DOMPurify for markdown rendering and sanitization -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
 <script>
 $(document).ready(function() {
     let currentSessionId = null; // id активной сессии чата
@@ -359,13 +362,8 @@ $(document).ready(function() {
                 if (response.error) {
                     appendMessage('assistant', `<div class="alert alert-danger">${response.error}</div>`);
                 } else {
-                    // Create a container for text response
-                    const messageContent = `
-                        <div class="response-container">
-                            <div class="text-response">${response.response}</div>
-                        </div>
-                    `;
-                    appendMessage('assistant', messageContent);
+                    // Pass only the raw response text for markdown rendering
+                    appendMessage('assistant', response.response);
                     // Add images to the gallery
                     if (response.user_image_url) {
                         addImageToGallery(response.user_image_url, message);
@@ -390,10 +388,15 @@ $(document).ready(function() {
     // Helper function to append messages
     function appendMessage(role, content) {
         const messageId = Date.now();
+        let renderedContent = content;
+        if (role === 'assistant') {
+            // Render markdown and sanitize
+            renderedContent = DOMPurify.sanitize(marked.parse(content));
+        }
         const messageHtml = `
             <div id="message-${messageId}" class="message ${role}-message">
                 <div class="message-content">
-                    ${content}
+                    ${renderedContent}
                 </div>
             </div>
         `;

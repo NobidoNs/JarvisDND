@@ -196,7 +196,7 @@ def chat():
         db.session.add(user_msg)
         db.session.commit()
         # --- Генерация ответа ---
-        system_message = "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."
+        system_message = "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay. Give answers in md format"
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
