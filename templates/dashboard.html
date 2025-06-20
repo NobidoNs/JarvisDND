@@ -18,6 +18,11 @@
                 <i class="bi bi-image me-2"></i>Image Generator
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                <i class="bi bi-clock-history me-2"></i>Chat History
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content" id="dashboardTabsContent">
@@ -125,6 +130,20 @@
                 </div>
             </div>
         </div>
+
+        <!-- Chat History Tab -->
+        <div class="tab-pane fade" id="history" role="tabpanel">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-clock-history me-2"></i>Chat History
+                    </h5>
+                    <div id="chatHistoryContainer">
+                        <!-- Chat history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -213,6 +232,29 @@ $(document).ready(function() {
         });
     }
 
+    // Load chat history
+    function loadChatHistory() {
+        $.get('/api/chat-history', function(history) {
+            const container = $('#chatHistoryContainer');
+            container.empty();
+            if (!history.length) {
+                container.append('<div class="text-muted">No chat history found.</div>');
+                return;
+            }
+            history.forEach(chat => {
+                const chatBlock = `
+                    <div class="chat-history-item mb-3 p-2 border rounded">
+                        <div><strong>Session:</strong> ${chat.session_name || chat.id}</div>
+                        <div><strong>Last message:</strong> ${chat.last_message || ''}</div>
+                        <div><small class="text-muted">${new Date(chat.updated_at).toLocaleString()}</small></div>
+                        <button class="btn btn-sm btn-outline-primary mt-2 view-chat" data-id="${chat.id}">View</button>
+                    </div>
+                `;
+                container.append(chatBlock);
+            });
+        });
+    }
+
     // Load prompts and images when page loads
     loadPromptCheckboxes();
     loadPrompts();
@@ -221,6 +263,11 @@ $(document).ready(function() {
     // Load images when Image Generator tab is shown
     $('button[data-bs-target="#image"]').on('shown.bs.tab', function (e) {
         loadImages();
+    });
+
+    // Load chat history when History tab is shown
+    $('button[data-bs-target="#history"]').on('shown.bs.tab', function (e) {
+        loadChatHistory();
     });
 
     // Handle prompt form submission

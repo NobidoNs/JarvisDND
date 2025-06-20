@@ -63,6 +63,22 @@ class GeneratedImage(db.Model):
     user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
     source = db.Column(db.String(50), default='image_generator')  # 'image_generator' or 'chat'
 
+class ChatSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+    session_name = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    messages = db.relationship('ChatMessage', backref='session', lazy=True, cascade='all, delete-orphan')
+
+class ChatMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('chat_session.id'), nullable=False)
+    user_id = db.Column(db.String(50), db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # 'user' или 'assistant'
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, user_id)
@@ -155,19 +171,34 @@ def chat():
     data = request.get_json()
     message = data.get('message')
     selected_prompts = data.get('selected_prompts', [])
+    session_id = data.get('session_id')  # Можно добавить поддержку передачи session_id с фронта
     
     if not message:
         return jsonify({"error": "No message provided"}), 400
     
     try:
-        # Prepare system message with selected prompts
+        # --- Сессия чата ---
+        if session_id:
+            session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+        else:
+            session = ChatSession(user_id=current_user.id, session_name=None)
+            db.session.add(session)
+            db.session.commit()
+        # Сохраняем сообщение пользователя
+        user_msg = ChatMessage(
+            session_id=session.id,
+            user_id=current_user.id,
+            role='user',
+            content=message
+        )
+        db.session.add(user_msg)
+        db.session.commit()
+        # --- Генерация ответа ---
         system_message = "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
                 system_message += f"\nAdditional context and style: {' '.join(prompt_contents)}"
-
-        # Generate text response
         print(system_message)
         client = Client()
         response = client.chat.completions.create(
@@ -179,29 +210,30 @@ def chat():
             temperature=0.7,
             max_tokens=1000
         )
-        
         if not response.choices:
             return jsonify({"error": "No response generated"}), 500
-
         ai_response = response.choices[0].message.content
-
-        # Create image prompt using the content directly from selected prompts
+        # Сохраняем ответ ассистента
+        ai_msg = ChatMessage(
+            session_id=session.id,
+            user_id=current_user.id,
+            role='assistant',
+            content=ai_response
+        )
+        db.session.add(ai_msg)
+        db.session.commit()
+        # --- Генерация изображений (без изменений) ---
         user_image_prompt = message
         if selected_prompts:
-            # Extract content from selected prompts
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
                 combined_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
                 user_image_prompt = combined_prompt
-
-        # Generate first image based on user's input
         user_image_response = client.images.generate(
             model="sdxl-1.0",
             prompt=user_image_prompt,
             response_format="url"
         )
-
-        # Save user's image to database
         user_image = GeneratedImage(
             url=user_image_response.data[0].url,
             prompt=user_image_prompt,
@@ -209,21 +241,16 @@ def chat():
             source='chat'
         )
         db.session.add(user_image)
-
-        # Generate second image based on AI's response
         ai_image_prompt = f"Dungeons and Dragons scene: {ai_response}"
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
                 ai_image_prompt = f"Style and details: {' '.join(prompt_contents)}. {ai_image_prompt}"
-
         ai_image_response = client.images.generate(
             model="sdxl-1.0",
             prompt=ai_image_prompt,
             response_format="url"
         )
-
-        # Save AI's image to database
         ai_image = GeneratedImage(
             url=ai_image_response.data[0].url,
             prompt=ai_image_prompt,
@@ -232,11 +259,11 @@ def chat():
         )
         db.session.add(ai_image)
         db.session.commit()
-        
         return jsonify({
             "response": ai_response,
             "user_image_url": user_image_response.data[0].url,
-            "ai_image_url": ai_image_response.data[0].url
+            "ai_image_url": ai_image_response.data[0].url,
+            "session_id": session.id
         })
     except Exception as e:
         print(f"Chat error: {str(e)}")  # For debugging
@@ -353,6 +380,21 @@ def handle_image(image_id):
         db.session.delete(image)
         db.session.commit()
         return '', 204
+
+@app.route('/api/chat-history', methods=['GET'])
+@login_required
+def chat_history():
+    sessions = ChatSession.query.filter_by(user_id=current_user.id).order_by(ChatSession.updated_at.desc()).all()
+    result = []
+    for session in sessions:
+        last_message = ChatMessage.query.filter_by(session_id=session.id).order_by(ChatMessage.created_at.desc()).first()
+        result.append({
+            'id': session.id,
+            'session_name': session.session_name,
+            'updated_at': session.updated_at.isoformat() if session.updated_at else None,
+            'last_message': last_message.content if last_message else None
+        })
+    return jsonify(result)
 
 if __name__ == '__main__':
     with app.app_context():
