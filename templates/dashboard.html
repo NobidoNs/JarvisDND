@@ -438,9 +438,15 @@ $(document).ready(function() {
         const promptElement = galleryItem.find('.prompt-text');
         promptElement.html(`
             <div class="input-group">
-                <textarea class="form-control" rows="3">${promptText}</textarea>
-                <button class="btn btn-primary save-image-prompt" type="button">Save</button>
-                <button class="btn btn-secondary cancel-edit-prompt" type="button">Cancel</button>
+                <textarea class="form-control" rows="2">${promptText}</textarea>
+                <div class="input-group-append">
+                    <button class="btn btn-link text-success save-image-prompt p-2" type="button" title="Save">
+                        <i class="bi bi-check2-circle"></i>
+                    </button>
+                    <button class="btn btn-link text-muted cancel-edit-prompt p-2" type="button" title="Cancel">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
             </div>
         `);
     });
@@ -449,7 +455,7 @@ $(document).ready(function() {
     $(document).on('click', '.save-image-prompt', function() {
         const galleryItem = $(this).closest('.gallery-item');
         const imageId = galleryItem.data('id');
-        const newPrompt = $(this).siblings('textarea').val();
+        const newPrompt = $(this).closest('.input-group').find('textarea').val();
         
         $.ajax({
             url: `/api/images/${imageId}`,

@@ -1127,26 +1127,59 @@ body::before {
 }
 
 .gallery-item .input-group {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 .gallery-item .input-group textarea {
     resize: vertical;
-    min-height: 60px;
-    font-size: 0.9rem;
+    min-height: 50px;
+    font-size: 0.95rem;
     background-color: var(--dark-bg);
     color: var(--text-primary);
     border-color: var(--border-color);
+    padding: 0.375rem 0.75rem;
 }
 
 .gallery-item .input-group textarea:focus {
     background-color: var(--dark-bg);
     color: var(--text-primary);
     border-color: rgb(117 70 215);
-    box-shadow: 0 0 0 0.2rem rgba(117, 70, 215, 0.25);
+    box-shadow: 0 0 0 0.15rem rgba(117, 70, 215, 0.2);
 }
 
-.gallery-item .input-group .btn {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+.gallery-item .input-group-append {
+    display: flex;
+    border: 1px solid var(--border-color);
+    border-left: none;
+    background-color: var(--dark-bg);
+}
+
+.gallery-item .input-group-append .btn {
+    border: none;
+    background: transparent;
+    padding: 0.375rem;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.gallery-item .input-group-append .btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.gallery-item .input-group-append .btn i {
+    font-size: 1.25rem;
+}
+
+.gallery-item .input-group-append .save-image-prompt:hover {
+    color: #2ecc71 !important;
+    transform: scale(1.1);
+}
+
+.gallery-item .input-group-append .cancel-edit-prompt:hover {
+    color: #e74c3c !important;
+    transform: scale(1.1);
 }
