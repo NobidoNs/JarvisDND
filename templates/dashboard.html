@@ -32,9 +32,14 @@
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">
-                                <i class="bi bi-chat-dots me-2"></i>AI DM Assistant
-                            </h5>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-chat-dots me-2"></i>AI DM Assistant
+                                </h5>
+                                <button id="newChatBtn" class="btn btn-outline-secondary btn-sm" type="button">
+                                    <i class="bi bi-plus-circle me-1"></i>Новый чат
+                                </button>
+                            </div>
                             <div class="chat-container" id="chatContainer">
                                 <div class="welcome-message text-center">
                                     <i class="bi bi-stars"></i>
@@ -248,7 +253,10 @@ $(document).ready(function() {
                         <div><strong>Session:</strong> ${chat.session_name || chat.id}</div>
                         <div><strong>Last message:</strong> ${chat.last_message || ''}</div>
                         <div><small class="text-muted">${new Date(chat.updated_at).toLocaleString()}</small></div>
-                        <button class="btn btn-sm btn-outline-primary mt-2 view-chat" data-id="${chat.id}">View</button>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-primary view-chat" data-id="${chat.id}">View</button>
+                            <button class="btn btn-sm btn-outline-danger delete-chat" data-id="${chat.id}"><i class="bi bi-trash"></i></button>
+                        </div>
                     </div>
                 `;
                 container.append(chatBlock);
@@ -563,6 +571,37 @@ $(document).ready(function() {
                 },
                 error: function() {
                     alert('Failed to delete image. Please try again.');
+                }
+            });
+        }
+    });
+
+    // Кнопка "Новый чат"
+    $('#newChatBtn').on('click', function() {
+        currentSessionId = null;
+        const chatContainer = $('#chatContainer');
+        chatContainer.empty();
+        chatContainer.append(`
+            <div class="welcome-message text-center">
+                <i class="bi bi-stars"></i>
+                <h3>Welcome to your AI DM Assistant!</h3>
+                <p>Ask me anything about D&D, from rules to story ideas.</p>
+            </div>
+        `);
+    });
+
+    // Удаление чата из истории
+    $(document).on('click', '.delete-chat', function() {
+        const sessionId = $(this).data('id');
+        if (confirm('Удалить этот чат и все его сообщения?')) {
+            $.ajax({
+                url: `/api/chat-history/${sessionId}`,
+                method: 'DELETE',
+                success: function() {
+                    loadChatHistory();
+                },
+                error: function() {
+                    alert('Ошибка при удалении чата.');
                 }
             });
         }

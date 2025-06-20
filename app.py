@@ -181,7 +181,9 @@ def chat():
         if session_id:
             session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
         else:
-            session = ChatSession(user_id=current_user.id, session_name=None)
+            # Название сессии — первые 50 символов сообщения пользователя
+            session_name = message[:50] if message else None
+            session = ChatSession(user_id=current_user.id, session_name=session_name)
             db.session.add(session)
             db.session.commit()
         # Сохраняем сообщение пользователя
@@ -411,6 +413,16 @@ def chat_history_session(session_id):
             'created_at': m.created_at.isoformat()
         } for m in messages
     ])
+
+@app.route('/api/chat-history/<int:session_id>', methods=['DELETE'])
+@login_required
+def delete_chat_session(session_id):
+    session = ChatSession.query.filter_by(id=session_id, user_id=current_user.id).first()
+    if not session:
+        return '', 404
+    db.session.delete(session)
+    db.session.commit()
+    return '', 204
 
 if __name__ == '__main__':
     with app.app_context():
