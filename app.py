@@ -41,6 +41,18 @@ if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
 
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
+def get_system_prompt():
+    """Read system prompt from prompts/system.txt file"""
+    try:
+        with open('prompts/system.txt', 'r', encoding='utf-8') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        # Fallback to default system prompt if file not found
+        return "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay. Give answers in md format"
+    except Exception as e:
+        print(f"Error reading system prompt: {e}")
+        return "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay. Give answers in md format"
+
 class User(UserMixin, db.Model):
     id = db.Column(db.String(50), primary_key=True)
     email = db.Column(db.String(100), unique=True)
@@ -196,7 +208,7 @@ def chat():
         db.session.add(user_msg)
         db.session.commit()
         # --- Генерация ответа ---
-        system_message = "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay. Give answers in md format"
+        system_message = get_system_prompt()
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
@@ -231,6 +243,12 @@ def chat():
             if prompt_contents:
                 combined_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
                 user_image_prompt = combined_prompt
+        
+        # Добавляем контекст из системного промпта для лучшей генерации изображений
+        system_context = get_system_prompt()
+        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
+            user_image_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {user_image_prompt}"
+        
         user_image_response = client.images.generate(
             model="sdxl-1.0",
             prompt=user_image_prompt,
@@ -243,11 +261,18 @@ def chat():
             source='chat'
         )
         db.session.add(user_image)
+        
+        # Генерация изображения для ответа ИИ с учетом системного контекста
         ai_image_prompt = f"Dungeons and Dragons scene: {ai_response}"
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
                 ai_image_prompt = f"Style and details: {' '.join(prompt_contents)}. {ai_image_prompt}"
+        
+        # Добавляем контекст из системного промпта для изображения ответа ИИ
+        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
+            ai_image_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {ai_image_prompt}"
+        
         ai_image_response = client.images.generate(
             model="sdxl-1.0",
             prompt=ai_image_prompt,
@@ -326,17 +351,25 @@ def generate_image():
     prompt = data.get('prompt')
     
     try:
+        # Добавляем контекст из системного промпта для лучшей генерации изображений
+        system_context = get_system_prompt()
+        enhanced_prompt = prompt
+        
+        # Если системный промпт содержит упоминания D&D, добавляем соответствующий контекст
+        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
+            enhanced_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {prompt}"
+        
         client = Client()
         response = client.images.generate(
             model="flux",
-            prompt=prompt,
+            prompt=enhanced_prompt,
             response_format="url"
         )
 
-        # Save generated image to database
+        # Save generated image to database with enhanced prompt
         image = GeneratedImage(
             url=response.data[0].url,
-            prompt=prompt,
+            prompt=enhanced_prompt,  # Сохраняем улучшенный промпт
             user_id=current_user.id,
             source='image_generator'
         )
