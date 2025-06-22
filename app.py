@@ -53,6 +53,18 @@ def get_system_prompt():
         print(f"Error reading system prompt: {e}")
         return "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay. Give answers in md format"
 
+def get_user_prompt():
+    """Read user prompt from prompts/user_prompt.txt file"""
+    try:
+        with open('prompts/user_prompt.txt', 'r', encoding='utf-8') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        # Fallback to default user prompt if file not found
+        return "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."
+    except Exception as e:
+        print(f"Error reading user prompt: {e}")
+        return "You are a helpful D&D assistant. Provide clear and concise answers about D&D rules, lore, and gameplay."
+
 class User(UserMixin, db.Model):
     id = db.Column(db.String(50), primary_key=True)
     email = db.Column(db.String(100), unique=True)
@@ -208,17 +220,23 @@ def chat():
         db.session.add(user_msg)
         db.session.commit()
         # --- Генерация ответа ---
-        system_message = get_system_prompt()
+        system_message = get_system_prompt()  # Базовый системный промпт
+        user_prompt = get_user_prompt()  # Пользовательский промпт
+        
+        # Объединяем системный и пользовательский промпты
+        combined_prompt = f"{system_message}\n\n{user_prompt}"
+        
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
-                system_message += f"\nAdditional context and style: {' '.join(prompt_contents)}"
-        print(system_message)
+                combined_prompt += f"\n\nAdditional context and style: {' '.join(prompt_contents)}"
+        
+        print(combined_prompt)
         client = Client()
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": system_message},
+                {"role": "system", "content": combined_prompt},
                 {"role": "user", "content": message}
             ],
             temperature=0.7,
@@ -241,8 +259,8 @@ def chat():
         if selected_prompts:
             prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
             if prompt_contents:
-                combined_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
-                user_image_prompt = combined_prompt
+                image_style_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
+                user_image_prompt = image_style_prompt
         
         # Добавляем контекст из системного промпта для лучшей генерации изображений
         system_context = get_system_prompt()
