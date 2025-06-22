@@ -138,6 +138,6 @@ class ChatService:
         # Add D&D context
         system_context = get_system_prompt()
         if "D&D" in system_context or "Dungeons and Dragons" in system_context:
-            enhanced_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {enhanced_prompt}"
+            enhanced_prompt = f"Use a color palette and rich colors. Dungeons and Dragons themed scene, fantasy RPG style: {enhanced_prompt}"
         
         return enhanced_prompt 
