@@ -29,7 +29,7 @@ class ChatService:
             db.session.commit()
             
             # Generate AI response
-            ai_response = self._generate_ai_response(message, selected_prompts)
+            ai_response = self._generate_ai_response(message, selected_prompts, session.id)
             
             # Save AI message
             ai_msg = ChatMessage(
@@ -54,8 +54,8 @@ class ChatService:
             print(f"Chat service error: {str(e)}")
             raise
     
-    def _generate_ai_response(self, message, selected_prompts=None):
-        """Generate AI response using g4f"""
+    def _generate_ai_response(self, message, selected_prompts=None, session_id=None):
+        """Generate AI response using g4f with conversation history"""
         system_message = get_system_prompt()
         user_prompt = get_user_prompt()
         
@@ -66,12 +66,27 @@ class ChatService:
             if prompt_contents:
                 combined_prompt += f"\n\nVery important context: {' '.join(prompt_contents)}"
         
+        # Build messages array with conversation history
+        messages = [{"role": "system", "content": combined_prompt}]
+        
+        # Add conversation history if session_id is provided
+        if session_id:
+            # Get previous messages from this session (excluding the current user message)
+            previous_messages = ChatMessage.query.filter_by(session_id=session_id).order_by(ChatMessage.created_at).all()
+            
+            # Add previous messages to the conversation
+            for msg in previous_messages:
+                messages.append({
+                    "role": msg.role,
+                    "content": msg.content
+                })
+        
+        # Add current user message
+        messages.append({"role": "user", "content": message})
+        
         response = self.client.chat.completions.create(
             model="gpt-4",
-            messages=[
-                {"role": "system", "content": combined_prompt},
-                {"role": "user", "content": message}
-            ],
+            messages=messages,
             temperature=0.7,
             max_tokens=1000
         )
