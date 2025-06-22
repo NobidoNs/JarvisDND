@@ -119,22 +119,11 @@ def login():
     google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
     
-    # Debug logging
-    print("=== OAuth Debug Information ===")
-    print(f"Environment REDIRECT_URI: {os.getenv('REDIRECT_URI')}")
-    print(f"Final REDIRECT_URI value: {REDIRECT_URI}")
-    print(f"Request URL: {request.url}")
-    print(f"Request Base URL: {request.base_url}")
-    print(f"Request Host: {request.host}")
-    print("=============================")
-    
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
         redirect_uri=REDIRECT_URI,
         scope=["openid", "email", "profile"],
     )
-    print(f"Using redirect URI: {REDIRECT_URI}")  # Debug log
-    print(f"Full request URI: {request_uri}")  # Debug log
     return redirect(request_uri)
 
 @app.route('/login/callback')
@@ -210,6 +199,8 @@ def chat():
             session = ChatSession(user_id=current_user.id, session_name=session_name)
             db.session.add(session)
             db.session.commit()
+        
+        print(message)
         # Сохраняем сообщение пользователя
         user_msg = ChatMessage(
             session_id=session.id,
@@ -231,7 +222,7 @@ def chat():
             if prompt_contents:
                 combined_prompt += f"\n\nAdditional context and style: {' '.join(prompt_contents)}"
         
-        print(combined_prompt)
+        print("combined_prompt",combined_prompt)
         client = Client()
         response = client.chat.completions.create(
             model="gpt-4",
@@ -245,6 +236,7 @@ def chat():
         if not response.choices:
             return jsonify({"error": "No response generated"}), 500
         ai_response = response.choices[0].message.content
+        
         # Сохраняем ответ ассистента
         ai_msg = ChatMessage(
             session_id=session.id,
@@ -254,62 +246,75 @@ def chat():
         )
         db.session.add(ai_msg)
         db.session.commit()
-        # --- Генерация изображений (без изменений) ---
-        user_image_prompt = message
-        if selected_prompts:
-            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
-            if prompt_contents:
-                image_style_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
-                user_image_prompt = image_style_prompt
         
-        # Добавляем контекст из системного промпта для лучшей генерации изображений
-        system_context = get_system_prompt()
-        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
-            user_image_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {user_image_prompt}"
-        
-        user_image_response = client.images.generate(
-            model="sdxl-1.0",
-            prompt=user_image_prompt,
-            response_format="url"
-        )
-        user_image = GeneratedImage(
-            url=user_image_response.data[0].url,
-            prompt=user_image_prompt,
-            user_id=current_user.id,
-            source='chat'
-        )
-        db.session.add(user_image)
-        
-        # Генерация изображения для ответа ИИ с учетом системного контекста
-        ai_image_prompt = f"Dungeons and Dragons scene: {ai_response}"
-        if selected_prompts:
-            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
-            if prompt_contents:
-                ai_image_prompt = f"Style and details: {' '.join(prompt_contents)}. {ai_image_prompt}"
-        
-        # Добавляем контекст из системного промпта для изображения ответа ИИ
-        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
-            ai_image_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {ai_image_prompt}"
-        
-        ai_image_response = client.images.generate(
-            model="sdxl-1.0",
-            prompt=ai_image_prompt,
-            response_format="url"
-        )
-        ai_image = GeneratedImage(
-            url=ai_image_response.data[0].url,
-            prompt=ai_image_prompt,
-            user_id=current_user.id,
-            source='chat'
-        )
-        db.session.add(ai_image)
-        db.session.commit()
-        return jsonify({
+        # Возвращаем текстовый ответ сразу
+        response_data = {
             "response": ai_response,
-            "user_image_url": user_image_response.data[0].url,
-            "ai_image_url": ai_image_response.data[0].url,
             "session_id": session.id
-        })
+        }
+        
+        # Генерируем изображения асинхронно (не блокируем ответ)
+        try:
+            # --- Генерация изображений (без изменений) ---
+            user_image_prompt = message
+            if selected_prompts:
+                prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+                if prompt_contents:
+                    image_style_prompt = f"Style and details: {' '.join(prompt_contents)}. Dungeons and Dragons scene: {message}"
+                    user_image_prompt = image_style_prompt
+            
+            # Добавляем контекст из системного промпта для лучшей генерации изображений
+            system_context = get_system_prompt()
+            if "D&D" in system_context or "Dungeons and Dragons" in system_context:
+                user_image_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {user_image_prompt}"
+            
+            user_image_response = client.images.generate(
+                model="sdxl-1.0",
+                prompt=user_image_prompt,
+                response_format="url"
+            )
+            user_image = GeneratedImage(
+                url=user_image_response.data[0].url,
+                prompt=user_image_prompt,
+                user_id=current_user.id,
+                source='chat'
+            )
+            db.session.add(user_image)
+            
+            # Генерация изображения для ответа ИИ с учетом системного контекста
+            ai_image_prompt = f"Dungeons and Dragons scene: {ai_response}"
+            if selected_prompts:
+                prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+                if prompt_contents:
+                    ai_image_prompt = f"Style and details: {' '.join(prompt_contents)}. {ai_image_prompt}"
+            
+            # Добавляем контекст из системного промпта для изображения ответа ИИ
+            if "D&D" in system_context or "Dungeons and Dragons" in system_context:
+                ai_image_prompt = f"Dungeons and Dragons themed scene, fantasy RPG style: {ai_image_prompt}"
+            
+            ai_image_response = client.images.generate(
+                model="sdxl-1.0",
+                prompt=ai_image_prompt,
+                response_format="url"
+            )
+            ai_image = GeneratedImage(
+                url=ai_image_response.data[0].url,
+                prompt=ai_image_prompt,
+                user_id=current_user.id,
+                source='chat'
+            )
+            db.session.add(ai_image)
+            db.session.commit()
+            
+            # Добавляем URL изображений к ответу
+            response_data["user_image_url"] = user_image_response.data[0].url
+            response_data["ai_image_url"] = ai_image_response.data[0].url
+            
+        except Exception as image_error:
+            print(f"Image generation error: {str(image_error)}")
+            # Продолжаем без изображений
+        
+        return jsonify(response_data)
     except Exception as e:
         print(f"Chat error: {str(e)}")  # For debugging
         return jsonify({"error": "Failed to generate response. Please try again."}), 500

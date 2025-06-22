@@ -364,12 +364,12 @@ $(document).ready(function() {
                 } else {
                     // Pass only the raw response text for markdown rendering
                     appendMessage('assistant', response.response);
-                    // Add images to the gallery
+                    // Add images to the gallery if they exist
                     if (response.user_image_url) {
                         addImageToGallery(response.user_image_url, message);
                     }
                     if (response.ai_image_url) {
-                        addImageToGallery(response.ai_image_url, 'AI: ' + message);
+                        addImageToGallery(response.ai_image_url, 'AI: ' + response.response.substring(0, 50));
                     }
                     // Обновляем текущую сессию, если сервер вернул новый session_id
                     if (response.session_id) {

@@ -1,3 +1,3 @@
-The action takes place in a fantasy world, there are dark elves, forest elves, dragons of different elements and many other races that exist in the D&D board game. There are 4 main characters for which players play: the anthropomorphic cat Sarkis, the anthropomorphic hedgehog Terryl Thorny, the circus fairy and the vampire Liarin. Use this to write a script as the basic structure of the world.
+The action takes place in a fantasy world, there are dark elves, forest elves, dragons of different elements and many other races that exist in the D&D board game. Wite a script as the basic structure of the world.
 I run a D&D game for my friends and want you to help me. But answer exactly what I ask—if items or creatures come up, you must write their detailed D&D-style stats. As a separate point, provide a beautiful and vivid description for the players about whatever you’re talking about.
 Отвечай на Русском
