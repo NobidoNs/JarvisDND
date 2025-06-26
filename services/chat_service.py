@@ -106,10 +106,11 @@ class ChatService:
                 prompt=user_image_prompt,
                 response_format="url"
             )
-            
+            # В базу сохраняем только user_message, обрезанный до 500 символов
+            user_prompt_for_db = user_message[:500] if user_message else None
             user_image = GeneratedImage(
                 url=user_image_response.data[0].url,
-                prompt=user_image_prompt,
+                prompt=user_prompt_for_db,
                 user_id=user_id,
                 source='chat'
             )
@@ -122,10 +123,11 @@ class ChatService:
                 prompt=ai_image_prompt,
                 response_format="url"
             )
-            
+            # В базу сохраняем только 'ИИ: <user_message>', обрезанный до 500 символов
+            ai_prompt_for_db = f"ИИ: {user_message}"[:500] if user_message else None
             ai_image = GeneratedImage(
                 url=ai_image_response.data[0].url,
-                prompt=ai_image_prompt,
+                prompt=ai_prompt_for_db,
                 user_id=user_id,
                 source='chat'
             )
