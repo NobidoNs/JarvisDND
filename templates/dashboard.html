@@ -128,6 +128,10 @@
                         <h5 class="card-title">
                             <i class="bi bi-images me-2"></i>Your Generated Images
                         </h5>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="imageDeleteConfirmToggle" checked>
+                            <label class="form-check-label" for="imageDeleteConfirmToggle">Подтверждать удаление изображения</label>
+                        </div>
                         <div id="imageGalleryTab" class="image-gallery-grid">
                             <!-- Images will be loaded here -->
                         </div>
@@ -564,10 +568,14 @@ $(document).ready(function() {
 
     // Handle delete image
     $(document).on('click', '.delete-image', function() {
-        if (confirm('Are you sure you want to delete this image?')) {
+        const confirmDelete = $('#imageDeleteConfirmToggle').is(':checked');
+        let proceed = true;
+        if (confirmDelete) {
+            proceed = confirm('Are you sure you want to delete this image?');
+        }
+        if (proceed) {
             const galleryItem = $(this).closest('.gallery-item');
             const imageId = galleryItem.data('id');
-            
             $.ajax({
                 url: `/api/images/${imageId}`,
                 method: 'DELETE',
