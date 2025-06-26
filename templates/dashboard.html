@@ -473,30 +473,32 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify({ prompt: prompt }),
             success: function(response) {
-                if (response.image_url) {
-                    const img = new Image();
-                    img.onload = function() {
-                        $('#imageResult').html(`
-                            <div class="card">
-                                <img src="${response.image_url}" class="card-img-top" alt="Generated image">
-                                <div class="card-body">
-                                    <p class="card-text">${prompt}</p>
+                if (response.image_urls && response.image_urls.length > 0) {
+                    // Create a grid of images
+                    let imagesHtml = '<div class="row">';
+                    response.image_urls.forEach((imageUrl, index) => {
+                        imagesHtml += `
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <img src="${imageUrl}" class="card-img-top" alt="Generated image ${index + 1}">
+                                    <div class="card-body">
+                                        <p class="card-text">${prompt}</p>
+                                    </div>
                                 </div>
                             </div>
-                        `);
-                        // Reload the gallery to show the new image
-                        loadImages();
-                    };
-                    img.onerror = function() {
-                        $('#imageResult').html('<div class="alert alert-danger">Failed to load image. Please try again.</div>');
-                    };
-                    img.src = response.image_url;
+                        `;
+                    });
+                    imagesHtml += '</div>';
+                    
+                    $('#imageResult').html(imagesHtml);
+                    // Reload the gallery to show the new images
+                    loadImages();
                 } else {
-                    $('#imageResult').html('<div class="alert alert-danger">Failed to generate image. Please try again.</div>');
+                    $('#imageResult').html('<div class="alert alert-danger">Failed to generate images. Please try again.</div>');
                 }
             },
             error: function() {
-                $('#imageResult').html('<div class="alert alert-danger">Failed to generate image. Please try again.</div>');
+                $('#imageResult').html('<div class="alert alert-danger">Failed to generate images. Please try again.</div>');
             }
         });
     });
