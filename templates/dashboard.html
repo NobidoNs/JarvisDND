@@ -611,6 +611,14 @@ $(document).ready(function() {
             });
         }
     });
+
+    // Подсветка всей ячейки при наведении на кнопку View
+    $(document).on('mouseenter', '.view-chat', function() {
+        $(this).closest('.chat-history-item').addClass('_hover');
+    });
+    $(document).on('mouseleave', '.view-chat', function() {
+        $(this).closest('.chat-history-item').removeClass('_hover');
+    });
 });
 </script>
 {% endblock %}

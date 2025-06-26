@@ -1183,3 +1183,30 @@ body::before {
     color: #e74c3c !important;
     transform: scale(1.1);
 }
+
+/* Chat history grid cell standard size */
+#chatHistoryContainer .col {
+    min-width: 220px;
+    max-width: 100%;
+    height: 220px;
+    display: flex;
+    align-items: stretch;
+    padding: 0;
+    border: none !important;
+}
+
+#chatHistoryContainer .chat-history-item {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    word-break: break-word;
+    overflow: hidden;
+    border: none !important;
+    box-shadow: none !important;
+    transition: background 0.2s;
+}
+
+#chatHistoryContainer .chat-history-item._hover {
+    background: rgba(168, 216, 234, 0.25);
+}
