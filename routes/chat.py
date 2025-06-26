@@ -40,7 +40,7 @@ def chat_history():
             'id': session.id,
             'session_name': session.session_name,
             'updated_at': session.updated_at.isoformat() if session.updated_at else None,
-            'last_message': last_message.content if last_message else None
+            'last_message': last_message.content[:100] if last_message and last_message.content else None
         })
     return jsonify(result)
 
