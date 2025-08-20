@@ -47,10 +47,10 @@ async function sendMessage() {
             
             // Append both images if they exist
             if (data.user_image_url) {
-                appendImage(data.user_image_url);
+                appendImage('You:', data.user_image_url);
             }
             if (data.ai_image_url) {
-                appendImage('AI:', data.user_image_url);
+                appendImage('AI:', data.ai_image_url);
             }
         }
     } catch (error) {
