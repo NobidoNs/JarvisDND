@@ -6,7 +6,7 @@ class ChatService:
     def __init__(self):
         self.client = Client()
     
-    def process_chat_message(self, user_id, message, selected_prompts=None, session_id=None):
+    def process_chat_message(self, user_id, message, selected_prompts=None, session_id=None, model=None):
         """Process chat message and generate AI response"""
         try:
             # Handle chat session
@@ -29,7 +29,7 @@ class ChatService:
             db.session.commit()
             
             # Generate AI response
-            ai_response = self._generate_ai_response(message, selected_prompts, session.id)
+            ai_response = self._generate_ai_response(message, selected_prompts, session.id, model)
             
             # Save AI message
             ai_msg = ChatMessage(
@@ -54,7 +54,7 @@ class ChatService:
             print(f"Chat service error: {str(e)}")
             raise
     
-    def _generate_ai_response(self, message, selected_prompts=None, session_id=None):
+    def _generate_ai_response(self, message, selected_prompts=None, session_id=None, model=None):
         """Generate AI response using g4f with conversation history"""
         system_message = get_system_prompt()
         user_prompt = get_user_prompt()
@@ -85,7 +85,7 @@ class ChatService:
         messages.append({"role": "user", "content": message})
         
         response = self.client.chat.completions.create(
-            model="gpt-4",
+            model=(model or "gpt-4"),
             messages=messages,
             temperature=0.7,
             max_tokens=1000

@@ -13,6 +13,7 @@ def chat():
     message = data.get('message')
     selected_prompts = data.get('selected_prompts', [])
     session_id = data.get('session_id')
+    model = data.get('model')
     
     if not message:
         return jsonify({"error": "No message provided"}), 400
@@ -22,7 +23,8 @@ def chat():
             user_id=current_user.id,
             message=message,
             selected_prompts=selected_prompts,
-            session_id=session_id
+            session_id=session_id,
+            model=model
         )
         return jsonify(result)
     except Exception as e:

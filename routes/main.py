@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from models import Prompt
 
@@ -37,3 +37,19 @@ def logout():
     from flask_login import logout_user
     logout_user()
     return redirect(url_for('main.index')) 
+
+# Expose available models for frontend selectors
+@main_bp.route('/api/available-models', methods=['GET'])
+@login_required
+def available_models():
+    return jsonify({
+        "text_models": {
+            "gpt-4": "GPT-4",
+            "gpt-4o": "GPT-4o",
+            "gpt-3.5-turbo": "GPT-3.5 Turbo"
+        },
+        "image_models": {
+            "sdxl-1.0": "Stable Diffusion XL 1.0",
+            "flux": "Flux"
+        }
+    })

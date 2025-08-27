@@ -54,6 +54,12 @@
                                         <i class="bi bi-send"></i>
                                     </button>
                                 </div>
+                                <div class="row g-2 mt-2">
+                                    <div class="col-md-6">
+                                        <label for="text-model-select" class="form-label mb-1">Модель для чата</label>
+                                        <select id="text-model-select" class="form-select form-select-sm"></select>
+                                    </div>
+                                </div>
                                 <div class="prompt-selector mb-3">
                                     <label class="form-label">Select prompts to use for generation:</label>
                                     <div id="promptCheckboxes" class="d-flex flex-wrap gap-2">
@@ -360,7 +366,8 @@ $(document).ready(function() {
             data: JSON.stringify({ 
                 message: message,
                 selected_prompts: selectedPrompts,
-                session_id: currentSessionId // <-- добавляем id сессии, если есть
+                session_id: currentSessionId, // <-- добавляем id сессии, если есть
+                model: window.modelUtils?.getSelectedTextModel ? window.modelUtils.getSelectedTextModel() : 'gpt-4'
             }),
             success: function(response) {
                 // Remove loading indicator and add response
