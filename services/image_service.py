@@ -14,11 +14,12 @@ class ImageService:
             # Generate 4 images using separate requests
             image_urls = []
             for i in range(4):
-                response = self.client.images.generate(
-                    model="sdxl-1.0",
-                    prompt=enhanced_prompt,
-                    response_format="url"
-                )
+                            response = self.client.images.generate(
+                model="sdxl-1.0",
+                prompt=enhanced_prompt,
+                response_format="url",
+                web_search=False
+            )
                 
                 # Save generated image to database
                 image = GeneratedImage(

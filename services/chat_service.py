@@ -85,10 +85,11 @@ class ChatService:
         messages.append({"role": "user", "content": message})
         
         response = self.client.chat.completions.create(
-            model=(model or "gpt-4"),
+            model=(model or "gpt-4o-mini"),
             messages=messages,
             temperature=0.7,
-            max_tokens=1000
+            max_tokens=1000,
+            web_search=False
         )
         
         if not response.choices:
@@ -104,7 +105,8 @@ class ChatService:
             user_image_response = self.client.images.generate(
                 model="sdxl-1.0",
                 prompt=user_image_prompt,
-                response_format="url"
+                response_format="url",
+                web_search=False
             )
             # В базу сохраняем только user_message, обрезанный до 500 символов
             user_prompt_for_db = user_message[:500] if user_message else None
@@ -121,7 +123,8 @@ class ChatService:
             ai_image_response = self.client.images.generate(
                 model="sdxl-1.0",
                 prompt=ai_image_prompt,
-                response_format="url"
+                response_format="url",
+                web_search=False
             )
             # В базу сохраняем только 'ИИ: <user_message>', обрезанный до 500 символов
             ai_prompt_for_db = f"ИИ: {user_message}"[:500] if user_message else None

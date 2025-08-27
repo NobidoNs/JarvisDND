@@ -194,3 +194,4 @@ cython_debug/
 .cursorindexingignore
 har_and_cookies/.nodriver_is_open
 har_and_cookies/auth_ARTA.json
+ai_test.py
