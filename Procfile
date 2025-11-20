@@ -1,1 +1,1 @@
-web: gunicorn app:app
+web: gunicorn app:app --workers ${WEB_CONCURRENCY:-2} --threads ${GUNICORN_THREADS:-2} --timeout ${GUNICORN_TIMEOUT:-120} --graceful-timeout ${GUNICORN_GRACEFUL_TIMEOUT:-60} --keep-alive ${GUNICORN_KEEP_ALIVE:-5}
