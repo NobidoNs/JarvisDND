@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from services.ai_client import StableAIClient
 from utils.local_storage import JsonStore, next_id
-from utils.prompt_utils import get_system_prompt
+from utils.prompt_utils import enhance_image_prompt
 
 _images_store = JsonStore("images", default_factory=list)
 
@@ -34,7 +34,8 @@ class ImageService:
     def generate_image(self, user_id: str, prompt: str) -> Dict[str, List[str]]:
         """Generate and store four images for a prompt."""
 
-        enhanced_prompt = self._enhance_prompt(prompt)
+        enhanced_prompt = enhance_image_prompt(prompt)
+        print(enhanced_prompt)
         image_urls: List[str] = []
 
         for _ in range(self.DEFAULT_IMAGE_COUNT):
@@ -83,11 +84,3 @@ class ImageService:
             _images_store.write(new_images)
             return True
         return False
-
-    def _enhance_prompt(self, prompt: str) -> str:
-        """Enhance prompt with D&D context."""
-
-        system_context = get_system_prompt()
-        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
-            return f"Dungeons and Dragons themed scene, fantasy RPG style: {prompt}"
-        return prompt

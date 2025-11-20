@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 from services.ai_client import StableAIClient
 from services.image_service import record_image
 from utils.local_storage import JsonStore, next_id
-from utils.prompt_utils import get_system_prompt, get_user_prompt
+from utils.prompt_utils import get_system_prompt, get_user_prompt, enhance_image_prompt
 
 _session_store = JsonStore("chat_sessions", default_factory=list)
 _message_store = JsonStore("chat_messages", default_factory=list)
@@ -173,7 +173,7 @@ class ChatService:
         selected_prompts: Optional[List[Dict]],
     ) -> Dict:
         try:
-            user_image_prompt = self._enhance_image_prompt(user_message, selected_prompts)
+            user_image_prompt = enhance_image_prompt(user_message, selected_prompts)
             user_image_response = self.ai_client.generate_image(
                 model="sdxl-1.0",
                 prompt=user_image_prompt,
@@ -182,8 +182,8 @@ class ChatService:
             user_image_url = user_image_response.data[0].url
             record_image(user_id, user_image_url, user_message[:500], "chat")
 
-            ai_image_prompt = self._enhance_image_prompt(
-                f"Dungeons and Dragons scene: {ai_response}", selected_prompts
+            ai_image_prompt = enhance_image_prompt(
+                f"{ai_response}", selected_prompts
             )
             ai_image_response = self.ai_client.generate_image(
                 model="sdxl-1.0",
@@ -201,19 +201,3 @@ class ChatService:
             print(f"Image generation error: {exc}")
             return {}
 
-    def _enhance_image_prompt(
-        self, prompt: str, selected_prompts: Optional[List[Dict]] = None
-    ) -> str:
-        enhanced_prompt = prompt
-        if selected_prompts:
-            prompt_contents = [p.get("content", "") for p in selected_prompts if p.get("content")]
-            if prompt_contents:
-                enhanced_prompt = f"Style and details: {' '.join(prompt_contents)}. {enhanced_prompt}"
-
-        system_context = get_system_prompt()
-        if "D&D" in system_context or "Dungeons and Dragons" in system_context:
-            enhanced_prompt = (
-                "Use a color palette and rich colors. "
-                f"Dungeons and Dragons themed scene, fantasy RPG style: {enhanced_prompt}"
-            )
-        return enhanced_prompt
