@@ -1,10 +1,11 @@
-from g4f.client import Client
 from models import db, ChatSession, ChatMessage, GeneratedImage
 from utils.prompt_utils import get_system_prompt, get_user_prompt
+from services.ai_client import StableAIClient
+
 
 class ChatService:
-    def __init__(self):
-        self.client = Client()
+    def __init__(self, ai_client=None):
+        self.ai_client = ai_client or StableAIClient()
     
     def process_chat_message(self, user_id, message, selected_prompts=None, session_id=None, model=None):
         """Process chat message and generate AI response"""
@@ -84,25 +85,20 @@ class ChatService:
         # Add current user message
         messages.append({"role": "user", "content": message})
         
-        response = self.client.chat.completions.create(
-            model=(model or "gpt-4o-mini"),
+        return self.ai_client.chat_completion(
+            model=model,
             messages=messages,
             temperature=0.7,
             max_tokens=1000,
             web_search=False
         )
-        
-        if not response.choices:
-            raise Exception("No response generated")
-        
-        return response.choices[0].message.content
     
     def _generate_chat_images(self, user_id, user_message, ai_response, selected_prompts=None):
         """Generate images for chat messages"""
         try:
             # Generate user message image
             user_image_prompt = self._enhance_image_prompt(user_message, selected_prompts)
-            user_image_response = self.client.images.generate(
+            user_image_response = self.ai_client.generate_image(
                 model="sdxl-1.0",
                 prompt=user_image_prompt,
                 response_format="url",
@@ -120,7 +116,7 @@ class ChatService:
             
             # Generate AI response image
             ai_image_prompt = self._enhance_image_prompt(f"Dungeons and Dragons scene: {ai_response}", selected_prompts)
-            ai_image_response = self.client.images.generate(
+            ai_image_response = self.ai_client.generate_image(
                 model="sdxl-1.0",
                 prompt=ai_image_prompt,
                 response_format="url",

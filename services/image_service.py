@@ -1,10 +1,10 @@
-from g4f.client import Client
 from models import db, GeneratedImage
 from utils.prompt_utils import get_system_prompt
+from services.ai_client import StableAIClient
 
 class ImageService:
-    def __init__(self):
-        self.client = Client()
+    def __init__(self, ai_client=None):
+        self.ai_client = ai_client or StableAIClient()
     
     def generate_image(self, user_id, prompt):
         """Generate 4 images from prompt"""
@@ -13,13 +13,13 @@ class ImageService:
             
             # Generate 4 images using separate requests
             image_urls = []
-            for i in range(4):
-                            response = self.client.images.generate(
-                model="sdxl-1.0",
-                prompt=enhanced_prompt,
-                response_format="url",
-                web_search=False
-            )
+            for _ in range(4):
+                response = self.ai_client.generate_image(
+                    model="sdxl-1.0",
+                    prompt=enhanced_prompt,
+                    response_format="url",
+                    web_search=False
+                )
                 
                 # Save generated image to database
                 image = GeneratedImage(

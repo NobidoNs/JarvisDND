@@ -98,3 +98,25 @@ from utils.prompt_utils import get_system_prompt
 3. Добавить обработку ошибок
 4. Реализовать кэширование
 5. Добавить документацию API 
+
+## Настройка стабильного взаимодействия с AI
+
+`services/ai_client.py` реализует рекомендации из `documentation_ru/ИСПОЛЬЗОВАНИЕ_БЕСПЛАТНЫХ_ПРОВАЙДЕРОВ.md`.  
+Клиент использует бесплатные провайдеры через `RetryProvider`, автоматически перемешивает их и повторно пытается выполнить запросы при сбоях.
+
+Переменные окружения для тонкой настройки:
+
+- `G4F_FREE_PROVIDERS` — пробел-разделённый список провайдеров (по умолчанию OperaAria, Chatai, WeWordle, Startnest)
+- `G4F_CHAT_MODEL` / `G4F_IMAGE_MODEL` — модели по умолчанию для текста и изображений
+- `AI_CLIENT_MAX_ATTEMPTS` — число внешних повторов, поверх внутренних `RetryProvider`
+- `AI_CLIENT_BACKOFF_SECONDS` — базовая задержка между повторными попытками
+- `AI_PROVIDER_MAX_RETRIES` — сколько раз `RetryProvider` пробует каждого провайдера
+
+При необходимости можно переиспользовать `StableAIClient` в других сервисах:
+
+```python
+from services.ai_client import StableAIClient
+
+client = StableAIClient()
+print(client.describe())
+```
