@@ -2,4 +2,4 @@ Flask==2.2.5
 Werkzeug==2.2.3
 gunicorn
 python-dotenv==0.19.0
-git+https://github.com/xtekky/gpt4free.git@g4f
+g4f
