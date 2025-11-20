@@ -1,64 +1,46 @@
-from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
-from services.image_service import ImageService
-from models import GeneratedImage
+from flask import Blueprint, jsonify, request
 
-images_bp = Blueprint('images', __name__, url_prefix='/api')
+from services.image_service import ImageService
+from utils.local_user import get_user_id
+
+images_bp = Blueprint("images", __name__, url_prefix="/api")
 image_service = ImageService()
 
-@images_bp.route('/generate-image', methods=['POST'])
-@login_required
+
+@images_bp.route("/generate-image", methods=["POST"])
 def generate_image():
-    data = request.get_json()
-    prompt = data.get('prompt')
-    
+    data = request.get_json() or {}
+    prompt = data.get("prompt", "").strip()
+    if not prompt:
+        return jsonify({"error": "Prompt is required to generate images."}), 400
     try:
-        result = image_service.generate_image(current_user.id, prompt)
+        result = image_service.generate_image(get_user_id(), prompt)
         return jsonify(result)
-    except Exception as e:
-        print(f"Error generating image: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+    except Exception as exc:
+        print(f"Error generating image: {exc}")
+        return jsonify({"error": "Failed to generate image."}), 500
 
-@images_bp.route('/images', methods=['GET'])
-@login_required
+
+@images_bp.route("/images", methods=["GET"])
 def get_images():
-    images = GeneratedImage.query.filter_by(user_id=current_user.id).order_by(GeneratedImage.created_at.desc()).all()
-    return jsonify([{
-        'id': img.id,
-        'url': img.url,
-        'prompt': img.prompt,
-        'created_at': img.created_at.isoformat(),
-        'source': img.source
-    } for img in images])
+    images = image_service.list_images(get_user_id())
+    return jsonify(images)
 
-@images_bp.route('/images/<int:image_id>', methods=['PUT'])
-@login_required
+
+@images_bp.route("/images/<int:image_id>", methods=["PUT"])
 def update_image(image_id):
-    from models import db
-    image = GeneratedImage.query.filter_by(id=image_id, user_id=current_user.id).first()
-    if not image:
-        return '', 404
-    
-    data = request.get_json()
-    image.prompt = data['prompt']
-    db.session.commit()
-    
-    return jsonify({
-        'id': image.id,
-        'url': image.url,
-        'prompt': image.prompt,
-        'created_at': image.created_at.isoformat(),
-        'source': image.source
-    })
+    data = request.get_json() or {}
+    prompt = data.get("prompt", "").strip()
+    if not prompt:
+        return jsonify({"error": "Prompt is required."}), 400
+    image = image_service.update_image(image_id, get_user_id(), prompt)
+    if image:
+        return jsonify(image)
+    return "", 404
 
-@images_bp.route('/images/<int:image_id>', methods=['DELETE'])
-@login_required
+
+@images_bp.route("/images/<int:image_id>", methods=["DELETE"])
 def delete_image(image_id):
-    from models import db
-    image = GeneratedImage.query.filter_by(id=image_id, user_id=current_user.id).first()
-    if not image:
-        return '', 404
-    
-    db.session.delete(image)
-    db.session.commit()
-    return '', 204 
+    if image_service.delete_image(image_id, get_user_id()):
+        return "", 204
+    return "", 404

@@ -8,31 +8,31 @@
 
 ```
 JarvisDND/
-├── app.py                 # Старый монолитный файл (сохранен для сравнения)
-├── app_new.py            # Новый главный файл приложения
-├── config.py             # Конфигурация приложения
-├── models.py             # Модели базы данных
-├── auth.py               # Аутентификация и OAuth
-├── routes/               # Маршруты приложения
+├── app.py                 # Точка входа Flask
+├── config.py              # Конфигурация приложения
+├── data/                  # Локальные JSON-хранилища
+├── routes/                # Маршруты приложения
 │   ├── __init__.py
-│   ├── main.py          # Основные маршруты (index, login, dashboard, logout)
-│   ├── chat.py          # API чата
-│   ├── prompts.py       # API промптов
-│   └── images.py        # API изображений
-├── services/            # Бизнес-логика
+│   ├── main.py            # Основные страницы и служебные API
+│   ├── chat.py            # API чата
+│   ├── prompts.py         # API промптов
+│   └── images.py          # API изображений
+├── services/              # Бизнес-логика
 │   ├── __init__.py
-│   ├── chat_service.py  # Логика чата
-│   ├── image_service.py # Генерация изображений
-│   └── prompt_service.py # Работа с промптами
-└── utils/               # Утилиты
+│   ├── chat_service.py    # Логика чата
+│   ├── image_service.py   # Генерация и хранение изображений
+│   └── prompt_service.py  # Работа с промптами
+└── utils/                 # Утилиты
     ├── __init__.py
-    └── prompt_utils.py  # Работа с файлами промптов
+    ├── local_storage.py   # JSON-хранилище
+    ├── local_user.py      # Локальный пользователь
+    └── prompt_utils.py    # Работа с файлами промптов
 ```
 
 ## Основные улучшения
 
 ### 1. Разделение ответственности
-- **Модели** (`models.py`) - только структура данных
+- **Локальное хранилище** (`data/` + `utils/local_storage.py`) - хранение данных в файлах
 - **Сервисы** (`services/`) - бизнес-логика
 - **Маршруты** (`routes/`) - обработка HTTP-запросов
 - **Конфигурация** (`config.py`) - настройки приложения
@@ -56,12 +56,6 @@ JarvisDND/
 
 ### Запуск приложения
 ```bash
-# Использовать новый файл
-python app_new.py
-
-# Или переименовать
-mv app.py app_old.py
-mv app_new.py app.py
 python app.py
 ```
 
@@ -69,10 +63,9 @@ python app.py
 ```python
 # В маршрутах
 from services.chat_service import ChatService
-from models import User, ChatSession
 
 # В сервисах
-from models import db, ChatMessage
+from utils.local_storage import JsonStore
 from utils.prompt_utils import get_system_prompt
 ```
 

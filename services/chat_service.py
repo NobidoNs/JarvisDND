@@ -1,156 +1,219 @@
-from models import db, ChatSession, ChatMessage, GeneratedImage
-from utils.prompt_utils import get_system_prompt, get_user_prompt
+from datetime import datetime
+from typing import Dict, List, Optional
+
 from services.ai_client import StableAIClient
+from services.image_service import record_image
+from utils.local_storage import JsonStore, next_id
+from utils.prompt_utils import get_system_prompt, get_user_prompt
+
+_session_store = JsonStore("chat_sessions", default_factory=list)
+_message_store = JsonStore("chat_messages", default_factory=list)
 
 
 class ChatService:
-    def __init__(self, ai_client=None):
+    def __init__(self, ai_client: Optional[StableAIClient] = None):
         self.ai_client = ai_client or StableAIClient()
-    
-    def process_chat_message(self, user_id, message, selected_prompts=None, session_id=None, model=None):
-        """Process chat message and generate AI response"""
-        try:
-            # Handle chat session
-            if session_id:
-                session = ChatSession.query.filter_by(id=session_id, user_id=user_id).first()
-            else:
-                session_name = message[:50] if message else None
-                session = ChatSession(user_id=user_id, session_name=session_name)
-                db.session.add(session)
-                db.session.commit()
-            
-            # Save user message
-            user_msg = ChatMessage(
-                session_id=session.id,
-                user_id=user_id,
-                role='user',
-                content=message
+
+    def process_chat_message(
+        self,
+        *,
+        user_id: str,
+        message: str,
+        selected_prompts: Optional[List[Dict]] = None,
+        session_id: Optional[int] = None,
+        model: Optional[str] = None,
+    ) -> Dict:
+        """Process chat message and generate AI response."""
+
+        session = self._get_or_create_session(user_id, session_id, message)
+        ai_response = self._generate_ai_response(message, selected_prompts, session["id"], model)
+        self._persist_messages(session["id"], user_id, message, ai_response)
+        images = self._generate_chat_images(user_id, message, ai_response, selected_prompts)
+        return {"response": ai_response, "session_id": session["id"], **images}
+
+    def list_chat_sessions(self, user_id: str) -> List[Dict]:
+        sessions = [s for s in _session_store.read() if s.get("user_id") == user_id]
+        messages = _message_store.read()
+        result = []
+        for session in sessions:
+            session_messages = [
+                msg for msg in messages if msg.get("session_id") == session.get("id")
+            ]
+            session_messages.sort(key=lambda m: m.get("created_at", ""))
+            last_message = session_messages[-1]["content"] if session_messages else None
+            result.append(
+                {
+                    "id": session.get("id"),
+                    "session_name": session.get("session_name"),
+                    "updated_at": session.get("updated_at"),
+                    "last_message": (last_message[:100] if last_message else None),
+                }
             )
-            db.session.add(user_msg)
-            db.session.commit()
-            
-            # Generate AI response
-            ai_response = self._generate_ai_response(message, selected_prompts, session.id, model)
-            
-            # Save AI message
-            ai_msg = ChatMessage(
-                session_id=session.id,
-                user_id=user_id,
-                role='assistant',
-                content=ai_response
+        return sorted(result, key=lambda s: s.get("updated_at", ""), reverse=True)
+
+    def get_session_messages(self, session_id: int, user_id: str) -> List[Dict]:
+        session = self._find_session(session_id, user_id)
+        if not session:
+            return []
+        messages = [
+            msg
+            for msg in _message_store.read()
+            if msg.get("session_id") == session_id
+        ]
+        messages.sort(key=lambda msg: msg.get("created_at", ""))
+        return messages
+
+    def delete_chat_session(self, session_id: int, user_id: str) -> bool:
+        sessions = _session_store.read()
+        new_sessions = [
+            s for s in sessions if not (s.get("id") == session_id and s.get("user_id") == user_id)
+        ]
+        if len(new_sessions) == len(sessions):
+            return False
+        _session_store.write(new_sessions)
+
+        messages = _message_store.read()
+        messages = [m for m in messages if m.get("session_id") != session_id]
+        _message_store.write(messages)
+        return True
+
+    def _get_or_create_session(self, user_id: str, session_id: Optional[int], message: str) -> Dict:
+        sessions = _session_store.read()
+        session = None
+        if session_id:
+            session = next(
+                (s for s in sessions if s.get("id") == session_id and s.get("user_id") == user_id),
+                None,
             )
-            db.session.add(ai_msg)
-            db.session.commit()
-            
-            # Generate images asynchronously
-            images = self._generate_chat_images(user_id, message, ai_response, selected_prompts)
-            
-            return {
-                "response": ai_response,
-                "session_id": session.id,
-                **images
+        if not session:
+            session = {
+                "id": next_id(sessions),
+                "user_id": user_id,
+                "session_name": (message[:50] if message else "New session"),
+                "created_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat(),
             }
-            
-        except Exception as e:
-            print(f"Chat service error: {str(e)}")
-            raise
-    
-    def _generate_ai_response(self, message, selected_prompts=None, session_id=None, model=None):
-        """Generate AI response using g4f with conversation history"""
+            sessions.append(session)
+        else:
+            session["session_name"] = session.get("session_name") or (message[:50] if message else "Chat")
+            session["updated_at"] = datetime.utcnow().isoformat()
+        _session_store.write(sessions)
+        return session
+
+    def _find_session(self, session_id: int, user_id: str) -> Optional[Dict]:
+        sessions = _session_store.read()
+        for session in sessions:
+            if session.get("id") == session_id and session.get("user_id") == user_id:
+                return session
+        return None
+
+    def _persist_messages(self, session_id: int, user_id: str, user_message: str, ai_response: str) -> None:
+        messages = _message_store.read()
+        user_record = {
+            "id": next_id(messages),
+            "session_id": session_id,
+            "user_id": user_id,
+            "role": "user",
+            "content": user_message,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        messages.append(user_record)
+        ai_record = {
+            "id": next_id(messages),
+            "session_id": session_id,
+            "user_id": user_id,
+            "role": "assistant",
+            "content": ai_response,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        messages.append(ai_record)
+        _message_store.write(messages)
+
+    def _generate_ai_response(
+        self,
+        message: str,
+        selected_prompts: Optional[List[Dict]],
+        session_id: int,
+        model: Optional[str],
+    ) -> str:
         system_message = get_system_prompt()
         user_prompt = get_user_prompt()
-        
         combined_prompt = f"{system_message}\n\n{user_prompt}"
-        
+
         if selected_prompts:
-            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+            prompt_contents = [p.get("content", "") for p in selected_prompts if p.get("content")]
             if prompt_contents:
                 combined_prompt += f"\n\nVery important context: {' '.join(prompt_contents)}"
-        
-        # Build messages array with conversation history
-        messages = [{"role": "system", "content": combined_prompt}]
-        
-        # Add conversation history if session_id is provided
-        if session_id:
-            # Get previous messages from this session (excluding the current user message)
-            previous_messages = ChatMessage.query.filter_by(session_id=session_id).order_by(ChatMessage.created_at).all()
-            
-            # Add previous messages to the conversation
-            for msg in previous_messages:
-                messages.append({
-                    "role": msg.role,
-                    "content": msg.content
-                })
-        
-        # Add current user message
-        messages.append({"role": "user", "content": message})
-        
-        response = self.client.chat.completions.create(
+
+        conversation = [{"role": "system", "content": combined_prompt}]
+
+        history = [
+            msg
+            for msg in _message_store.read()
+            if msg.get("session_id") == session_id
+        ]
+        history.sort(key=lambda msg: msg.get("created_at", ""))
+        for msg in history:
+            conversation.append({"role": msg.get("role"), "content": msg.get("content")})
+
+        conversation.append({"role": "user", "content": message})
+
+        return self.ai_client.chat_completion(
+            messages=conversation,
             model=(model or "gpt-4"),
-            messages=messages,
             temperature=0.7,
-            max_tokens=1000
+            max_tokens=1000,
         )
-    
-    def _generate_chat_images(self, user_id, user_message, ai_response, selected_prompts=None):
-        """Generate images for chat messages"""
+
+    def _generate_chat_images(
+        self,
+        user_id: str,
+        user_message: str,
+        ai_response: str,
+        selected_prompts: Optional[List[Dict]],
+    ) -> Dict:
         try:
-            # Generate user message image
             user_image_prompt = self._enhance_image_prompt(user_message, selected_prompts)
             user_image_response = self.ai_client.generate_image(
                 model="sdxl-1.0",
                 prompt=user_image_prompt,
-                response_format="url"
+                response_format="url",
             )
-            # В базу сохраняем только user_message, обрезанный до 500 символов
-            user_prompt_for_db = user_message[:500] if user_message else None
-            user_image = GeneratedImage(
-                url=user_image_response.data[0].url,
-                prompt=user_prompt_for_db,
-                user_id=user_id,
-                source='chat'
+            user_image_url = user_image_response.data[0].url
+            record_image(user_id, user_image_url, user_message[:500], "chat")
+
+            ai_image_prompt = self._enhance_image_prompt(
+                f"Dungeons and Dragons scene: {ai_response}", selected_prompts
             )
-            db.session.add(user_image)
-            
-            # Generate AI response image
-            ai_image_prompt = self._enhance_image_prompt(f"Dungeons and Dragons scene: {ai_response}", selected_prompts)
             ai_image_response = self.ai_client.generate_image(
                 model="sdxl-1.0",
                 prompt=ai_image_prompt,
-                response_format="url"
+                response_format="url",
             )
-            # В базу сохраняем только 'ИИ: <user_message>', обрезанный до 500 символов
-            ai_prompt_for_db = f"ИИ: {user_message}"[:500] if user_message else None
-            ai_image = GeneratedImage(
-                url=ai_image_response.data[0].url,
-                prompt=ai_prompt_for_db,
-                user_id=user_id,
-                source='chat'
-            )
-            db.session.add(ai_image)
-            db.session.commit()
-            
+            ai_image_url = ai_image_response.data[0].url
+            record_image(user_id, ai_image_url, f"ИИ: {user_message}"[:500], "chat")
+
             return {
-                "user_image_url": user_image_response.data[0].url,
-                "ai_image_url": ai_image_response.data[0].url
+                "user_image_url": user_image_url,
+                "ai_image_url": ai_image_url,
             }
-            
-        except Exception as e:
-            print(f"Image generation error: {str(e)}")
+        except Exception as exc:
+            print(f"Image generation error: {exc}")
             return {}
-    
-    def _enhance_image_prompt(self, prompt, selected_prompts=None):
-        """Enhance image prompt with D&D context and selected prompts"""
+
+    def _enhance_image_prompt(
+        self, prompt: str, selected_prompts: Optional[List[Dict]] = None
+    ) -> str:
         enhanced_prompt = prompt
-        
         if selected_prompts:
-            prompt_contents = [p.get('content', '') for p in selected_prompts if p.get('content')]
+            prompt_contents = [p.get("content", "") for p in selected_prompts if p.get("content")]
             if prompt_contents:
                 enhanced_prompt = f"Style and details: {' '.join(prompt_contents)}. {enhanced_prompt}"
-        
-        # Add D&D context
+
         system_context = get_system_prompt()
         if "D&D" in system_context or "Dungeons and Dragons" in system_context:
-            enhanced_prompt = f"Use a color palette and rich colors. Dungeons and Dragons themed scene, fantasy RPG style: {enhanced_prompt}"
-        
-        return enhanced_prompt 
+            enhanced_prompt = (
+                "Use a color palette and rich colors. "
+                f"Dungeons and Dragons themed scene, fantasy RPG style: {enhanced_prompt}"
+            )
+        return enhanced_prompt

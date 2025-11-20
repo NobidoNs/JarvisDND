@@ -1,57 +1,54 @@
-from flask import Blueprint, request, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, jsonify, request
+
 from services.prompt_service import PromptService
+from utils.local_user import get_user_id
 
-prompts_bp = Blueprint('prompts', __name__, url_prefix='/api')
+prompts_bp = Blueprint("prompts", __name__, url_prefix="/api")
+prompt_service = PromptService()
 
-@prompts_bp.route('/prompts', methods=['GET'])
-@login_required
+
+@prompts_bp.route("/prompts", methods=["GET"])
 def get_prompts():
-    prompts = PromptService.get_user_prompts(current_user.id)
-    return jsonify([{
-        'id': p.id,
-        'title': p.title,
-        'content': p.content,
-        'created_at': p.created_at.isoformat()
-    } for p in prompts])
+    prompts = prompt_service.get_user_prompts(get_user_id())
+    return jsonify(prompts)
 
-@prompts_bp.route('/prompts', methods=['POST'])
-@login_required
+
+@prompts_bp.route("/prompts", methods=["POST"])
 def create_prompt():
-    data = request.get_json()
-    prompt = PromptService.create_prompt(
-        user_id=current_user.id,
-        title=data['title'],
-        content=data['content']
+    data = request.get_json() or {}
+    title = data.get("title", "").strip()
+    content = data.get("content", "").strip()
+    if not title or not content:
+        return jsonify({"error": "Prompt title and content are required."}), 400
+    prompt = prompt_service.create_prompt(
+        user_id=get_user_id(),
+        title=title,
+        content=content,
     )
-    return jsonify({
-        'id': prompt.id,
-        'title': prompt.title,
-        'content': prompt.content
-    })
+    return jsonify(prompt), 201
 
-@prompts_bp.route('/prompts/<int:prompt_id>', methods=['PUT'])
-@login_required
+
+@prompts_bp.route("/prompts/<int:prompt_id>", methods=["PUT"])
 def update_prompt(prompt_id):
-    data = request.get_json()
-    prompt = PromptService.update_prompt(
+    data = request.get_json() or {}
+    title = data.get("title", "").strip()
+    content = data.get("content", "").strip()
+    if not title or not content:
+        return jsonify({"error": "Prompt title and content are required."}), 400
+    prompt = prompt_service.update_prompt(
         prompt_id=prompt_id,
-        user_id=current_user.id,
-        title=data['title'],
-        content=data['content']
+        user_id=get_user_id(),
+        title=title,
+        content=content,
     )
     if prompt:
-        return jsonify({
-            'id': prompt.id,
-            'title': prompt.title,
-            'content': prompt.content
-        })
-    return '', 404
+        return jsonify(prompt)
+    return "", 404
 
-@prompts_bp.route('/prompts/<int:prompt_id>', methods=['DELETE'])
-@login_required
+
+@prompts_bp.route("/prompts/<int:prompt_id>", methods=["DELETE"])
 def delete_prompt(prompt_id):
-    success = PromptService.delete_prompt(prompt_id, current_user.id)
+    success = prompt_service.delete_prompt(prompt_id, get_user_id())
     if success:
-        return '', 204
-    return '', 404 
+        return "", 204
+    return "", 404
