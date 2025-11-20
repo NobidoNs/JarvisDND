@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional
+from concurrent.futures import ThreadPoolExecutor
 
 from services.ai_client import StableAIClient
 from utils.local_storage import JsonStore, next_id
@@ -32,33 +33,44 @@ class ImageService:
         self.ai_client = ai_client or StableAIClient()
 
     def generate_image(self, user_id: str, prompt: str) -> Dict[str, List[str]]:
-        """Generate and store four images for a prompt."""
-
+        """Generate and store four images for a prompt using ThreadPoolExecutor."""
+        
         enhanced_prompt = enhance_image_prompt(prompt)
         print(enhanced_prompt)
-        image_urls: List[str] = []
+        
+        def generate_one(_):
+            """Generate one image."""
+            try:
+                response = self.ai_client.generate_image(
+                    model="sdxl-1.0",
+                    prompt=enhanced_prompt,
+                    response_format="url",
+                )
 
-        for _ in range(self.DEFAULT_IMAGE_COUNT):
-            response = self.ai_client.generate_image(
-                model="sdxl-1.0",
-                prompt=enhanced_prompt,
-                response_format="url",
-            )
+                if not getattr(response, "data", None):
+                    return None
 
-            if not getattr(response, "data", None):
-                continue
+                image_url = getattr(response.data[0], "url", None) or response.data[0].get("url")
+                if not image_url:
+                    return None
 
-            image_url = getattr(response.data[0], "url", None) or response.data[0].get("url")
-            if not image_url:
-                continue
-
-            image_urls.append(image_url)
-            record_image(user_id, image_url, enhanced_prompt, "image_generator")
-
-        if not image_urls:
-            raise RuntimeError("Image provider returned an empty response")
-
+                record_image(user_id, image_url, enhanced_prompt, "image_generator")
+                return image_url
+                
+            except Exception as e:
+                print(f"Error generating image: {e}")
+                return None
+        
+        # Запускаем все задачи параллельно
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            # Отправляем все задачи и получаем результаты
+            results = list(executor.map(generate_one, range(self.DEFAULT_IMAGE_COUNT)))
+        
+        # Фильтруем None значения
+        image_urls = [url for url in results if url is not None]
+        
         return {"image_urls": image_urls}
+
 
     def list_images(self, user_id: str) -> List[Dict]:
         images = [img for img in _images_store.read() if img.get("user_id") == user_id]

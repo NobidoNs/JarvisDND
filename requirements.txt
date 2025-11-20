@@ -3,3 +3,4 @@ Werkzeug==2.2.3
 gunicorn
 python-dotenv==0.19.0
 g4f
+threads
