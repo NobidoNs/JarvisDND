@@ -26,6 +26,8 @@ def record_image(user_id: str, url: str, prompt: str, source: str) -> Dict:
 
 
 class ImageService:
+    DEFAULT_IMAGE_COUNT = 4
+
     def __init__(self, ai_client: Optional[StableAIClient] = None):
         self.ai_client = ai_client or StableAIClient()
 
@@ -34,15 +36,27 @@ class ImageService:
 
         enhanced_prompt = self._enhance_prompt(prompt)
         image_urls: List[str] = []
-        for _ in range(4):
+
+        for _ in range(self.DEFAULT_IMAGE_COUNT):
             response = self.ai_client.generate_image(
                 model="sdxl-1.0",
                 prompt=enhanced_prompt,
                 response_format="url",
             )
-            image_url = response.data[0].url
+
+            if not getattr(response, "data", None):
+                continue
+
+            image_url = getattr(response.data[0], "url", None) or response.data[0].get("url")
+            if not image_url:
+                continue
+
             image_urls.append(image_url)
             record_image(user_id, image_url, enhanced_prompt, "image_generator")
+
+        if not image_urls:
+            raise RuntimeError("Image provider returned an empty response")
+
         return {"image_urls": image_urls}
 
     def list_images(self, user_id: str) -> List[Dict]:
