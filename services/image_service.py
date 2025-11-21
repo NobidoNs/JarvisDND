@@ -1,16 +1,61 @@
-from datetime import datetime
-from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+from pathlib import Path
+import re
+from typing import Dict, List, Optional
+from urllib.parse import urlparse
+from uuid import uuid4
 
+import requests
+
+from config import Config
 from services.ai_client import StableAIClient
 from utils.local_storage import JsonStore, next_id
 from utils.prompt_utils import enhance_image_prompt
 
 _images_store = JsonStore("images", default_factory=list)
+_image_download_dir = Path(Config.IMAGE_DOWNLOAD_DIR)
+_image_download_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _sanitize_filename_fragment(prompt: str) -> str:
+    if not prompt:
+        return "image"
+    slug = re.sub(r"[^a-z0-9]+", "-", prompt.lower())
+    slug = slug.strip("-")
+    return slug[:40] or "image"
+
+
+def _detect_extension(url: str) -> str:
+    parsed = urlparse(url or "")
+    suffix = Path(parsed.path).suffix
+    if suffix and len(suffix) <= 6:
+        return suffix
+    return ".jpg"
+
+
+def _download_image(url: str, prompt: str) -> Optional[str]:
+    if not url:
+        return None
+    try:
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        ext = _detect_extension(url)
+        filename = (
+            f"{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}_{uuid4().hex[:8]}_"
+            f"{_sanitize_filename_fragment(prompt)}{ext}"
+        )
+        file_path = _image_download_dir / filename
+        with open(file_path, "wb") as fh:
+            fh.write(response.content)
+        return str(file_path)
+    except Exception as exc:
+        print(f"Failed to download image from {url}: {exc}")
+        return None
 
 
 def record_image(user_id: str, url: str, prompt: str, source: str) -> Dict:
-    """Persist a generated image and return the stored record."""
+    """Persist a generated image, download it locally, and return the stored record."""
 
     images = _images_store.read()
     record = {
@@ -21,6 +66,9 @@ def record_image(user_id: str, url: str, prompt: str, source: str) -> Dict:
         "source": source,
         "created_at": datetime.utcnow().isoformat(),
     }
+    file_path = _download_image(url, prompt)
+    if file_path:
+        record["file_path"] = file_path
     images.append(record)
     _images_store.write(images)
     return record

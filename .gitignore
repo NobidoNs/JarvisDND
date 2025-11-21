@@ -197,3 +197,4 @@ har_and_cookies/auth_ARTA.json
 # Local file storage
 data/*
 !data/.gitkeep
+images/*
