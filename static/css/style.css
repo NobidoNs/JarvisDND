@@ -35,12 +35,14 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
+    /* Simplified gradient for better GPU performance */
     background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 105, 180, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(147, 112, 219, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(255, 20, 147, 0.05) 0%, transparent 50%);
+        radial-gradient(circle at 20% 80%, rgba(255, 105, 180, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(147, 112, 219, 0.08) 0%, transparent 40%);
     pointer-events: none;
     z-index: -1;
+    /* Force GPU layer but optimize */
+    /* will-change: auto; - Not needed, removed for optimization */
 }
 
 /* Navbar */
@@ -48,7 +50,7 @@ body::before {
     background: #1a1a2e !important; /* Solid dark background */
     border-bottom: 1px solid rgba(255, 105, 180, 0.2);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
+    /* backdrop-filter: blur(10px); - Removed for GPU optimization */
     padding: 1rem;
 }
 
@@ -127,8 +129,8 @@ body::before {
 .nav-pills .nav-link:hover,
 .nav-pills .nav-link.active {
     color: white !important;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
 }
 
 /* Cards */
@@ -137,8 +139,8 @@ body::before {
     border: 2px solid rgba(255, 105, 180, 0.2);
     border-radius: 15px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    /* backdrop-filter: blur(10px); - Removed for GPU optimization */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     position: relative;
     overflow: hidden;
 }
@@ -148,8 +150,8 @@ body::before {
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(255, 105, 180, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(255, 105, 180, 0.15);
     border-color: rgba(255, 105, 180, 0.4);
 }
 
@@ -206,8 +208,8 @@ body::before {
 
 .btn-primary:hover {
     background: var(--gradient-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
 }
 
 .btn-outline-primary {
@@ -222,24 +224,14 @@ body::before {
 .btn-outline-primary:hover {
     background: var(--gradient-primary);
     color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 105, 180, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255, 105, 180, 0.3);
 }
 
-/* Button animations */
-.btn-primary {
-    animation: slideInUp 0.8s ease-out 0.5s both;
-}
-
-.btn-primary:hover {
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
+/* Button animations - Removed for GPU optimization */
+/* .btn-primary animation removed */
+/* .btn-primary:hover pulse animation removed */
+/* @keyframes pulse removed */
 
 /* Forms */
 .form-control {
@@ -271,8 +263,8 @@ body::before {
     background: linear-gradient(135deg, var(--dark-bg) 0%, rgba(26, 26, 46, 0.9) 100%);
     border-color: var(--primary-color);
     color: var(--text-primary);
-    box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
-    transform: translateY(-1px);
+    box-shadow: 0 0 15px rgba(255, 105, 180, 0.25);
+    /* transform: translateY(-1px); - Removed for GPU optimization */
 }
 
 .form-control::placeholder {
@@ -296,7 +288,7 @@ body::before {
     height: 400px;
     overflow-y: auto;
     border: 2px solid rgba(255, 105, 180, 0.2);
-    backdrop-filter: blur(10px);
+    /* backdrop-filter: blur(10px); - Removed for GPU optimization */
     display: flex;
     flex-direction: column;
 }
@@ -308,18 +300,17 @@ body::before {
     margin-bottom: 15px;
     display: flex;
     width: 100%;
-    animation: messageSlideIn 0.5s ease;
+    /* animation: messageSlideIn 0.5s ease; - Removed for GPU optimization, using opacity only */
+    animation: messageFadeIn 0.3s ease;
     min-width: 0; /* Важно для flex-контейнера */
 }
 
-@keyframes messageSlideIn {
+@keyframes messageFadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
@@ -336,7 +327,7 @@ body::before {
     border-radius: 12px;
     position: relative;
     max-width: 85%;
-    backdrop-filter: blur(10px);
+    /* backdrop-filter: blur(10px); - Removed for GPU optimization */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -395,7 +386,8 @@ body::before {
 }
 
 .image-response img:hover {
-    transform: scale(1.02);
+    /* transform: scale(1.02); - Removed for GPU optimization */
+    opacity: 0.95;
 }
 
 /* Welcome Message */
@@ -415,15 +407,13 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
+    /* Simplified gradient for better GPU performance */
     background: 
-        radial-gradient(circle at 20% 80%, rgba(255, 105, 180, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(147, 112, 219, 0.1) 0%, transparent 50%);
+        radial-gradient(circle at 20% 80%, rgba(255, 105, 180, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, rgba(147, 112, 219, 0.08) 0%, transparent 40%);
 }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-}
+/* @keyframes float - Removed for GPU optimization */
 
 .welcome-section h1 {
     background: var(--gradient-primary);
@@ -434,10 +424,7 @@ body::before {
     margin-bottom: 1rem;
 }
 
-@keyframes glow {
-    from { filter: drop-shadow(0 0 10px rgba(255, 105, 180, 0.3)); }
-    to { filter: drop-shadow(0 0 20px rgba(255, 105, 180, 0.3)); }
-}
+/* @keyframes glow - Removed for GPU optimization (filter: drop-shadow is GPU-intensive) */
 
 .welcome-section .lead {
     color: var(--text-secondary);
@@ -472,18 +459,18 @@ body::before {
     position: relative;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     animation: fadeInPromptCard 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    transition: box-shadow 0.3s, transform 0.3s;
+    transition: box-shadow 0.3s;
 }
 
 .prompt-card:hover {
     box-shadow: 0 6px 24px rgba(255, 105, 180, 0.15), 0 1.5px 6px rgba(0,0,0,0.10);
-    transform: scale(1.025);
+    /* transform: scale(1.025); - Removed for GPU optimization */
     border-color: var(--primary-color);
 }
 
 @keyframes fadeInPromptCard {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .prompt-card h3 {
@@ -538,8 +525,8 @@ body::before {
     padding: 30px 20px;
     text-align: center;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-    transition: all 0.4s ease;
+    /* backdrop-filter: blur(10px); - Removed for GPU optimization */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     position: relative;
     overflow: hidden;
     animation: fadeInScale 0.6s ease-out both;
@@ -553,11 +540,11 @@ body::before {
 @keyframes fadeInScale {
     from {
         opacity: 0;
-        transform: scale(0.8) translateY(20px);
+        transform: translateY(20px);
     }
     to {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: translateY(0);
     }
 }
 
@@ -577,8 +564,8 @@ body::before {
 }
 
 .feature-card:hover {
-    transform: translateY(-10px) scale(1.05);
-    box-shadow: 0 20px 40px rgba(255, 105, 180, 0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(255, 105, 180, 0.25);
     border-color: rgba(255, 105, 180, 0.5);
 }
 
@@ -593,7 +580,8 @@ body::before {
 }
 
 .feature-card:hover i {
-    transform: scale(1.2) rotate(5deg);
+    /* transform: scale(1.1); - Removed for GPU optimization */
+    opacity: 0.9;
 }
 
 .feature-card h3 {
@@ -634,7 +622,7 @@ body::before {
 .nav-tabs .nav-link:hover {
     color: var(--primary-color);
     background-color: var(--dark-bg);
-    transform: translateY(-2px);
+    /* transform: translateY(-2px); - Removed for GPU optimization */
 }
 
 .nav-tabs .nav-link.active {
@@ -769,7 +757,8 @@ body::before {
 }
 
 .sweet-icon:hover {
-    transform: scale(1.2);
+    /* transform: scale(1.2); - Removed for GPU optimization */
+    opacity: 0.8;
 }
 
 /* Tab content styles */
@@ -1066,8 +1055,8 @@ body::before {
 }
 
 .image-gallery-grid .gallery-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
 .image-gallery-grid .gallery-item img {
@@ -1088,6 +1077,7 @@ body::before {
     margin-bottom: 0.5rem;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1182,12 +1172,12 @@ body::before {
 
 .gallery-item .input-group-append .save-image-prompt:hover {
     color: #2ecc71 !important;
-    transform: scale(1.1);
+    /* transform: scale(1.1); - Removed for GPU optimization */
 }
 
 .gallery-item .input-group-append .cancel-edit-prompt:hover {
     color: #e74c3c !important;
-    transform: scale(1.1);
+    /* transform: scale(1.1); - Removed for GPU optimization */
 }
 
 /* Chat history grid cell standard size */
